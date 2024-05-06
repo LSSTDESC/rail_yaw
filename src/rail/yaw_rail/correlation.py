@@ -15,7 +15,11 @@ from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
 from rail.core.data import DataHandle
 from rail.core.stage import RailStage
 from rail.yaw_rail.cache import YawCacheHandle
-from rail.yaw_rail.doc_utils import create_param, railstage_add_params_and_docs
+from rail.yaw_rail.utils import (
+    create_param,
+    railstage_add_params_and_docs,
+    unpack_stageparam_dict,
+)
 
 if TYPE_CHECKING:
     from rail.yaw_rail.cache import YawCache
@@ -74,7 +78,9 @@ class YawAutoCorrelate(RailStage):
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        self.yaw_config = Configuration.create(**self.config)
+        self.yaw_config = Configuration.create(
+            **unpack_stageparam_dict(self.config_options),
+        )
 
     def correlate(
         self,
@@ -126,7 +132,9 @@ class YawCrossCorrelate(RailStage):
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        self.yaw_config = Configuration.create(**self.config)
+        self.yaw_config = Configuration.create(
+            **unpack_stageparam_dict(self.config_options),
+        )
 
     def correlate(
         self,

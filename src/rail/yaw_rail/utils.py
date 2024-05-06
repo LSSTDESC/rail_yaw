@@ -62,3 +62,7 @@ def railstage_add_params_and_docs(**kwargs: StageParameter):
 
         return cls
     return decorator
+
+
+def unpack_stageparam_dict(params: dict[str, StageParameter]) -> dict[str, Any]:
+    return {key: param.value for key, param in params.items()}

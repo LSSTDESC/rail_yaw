@@ -20,10 +20,12 @@ from yaw import NewCatalog
 from ceci.config import StageParameter
 from rail.core.stage import RailStage
 from rail.core.data import DataHandle
-from rail.yaw_rail.doc_utils import railstage_add_params_and_docs
+from rail.yaw_rail.utils import (
+    railstage_add_params_and_docs,
+    unpack_stageparam_dict,
+)
 
 if TYPE_CHECKING:
-    from pandas import DataFrame
     from yaw.catalogs.scipy import ScipyCatalog
     from yaw.core.coordinates import Coordinate, CoordSky
 
@@ -54,14 +56,17 @@ yaw_config_columns = dict(
 yaw_config_patches = dict(
     patches=StageParameter(
         str,
+        required=False,
         msg="path to cache which provides the patch centers to construct consistent datasets",
     ),
     patch_name=StageParameter(
         str,
+        required=False,
         msg="column name of patch index (starting from 0)",
     ),
     n_patches=StageParameter(
         int,
+        required=False,
         msg="number of spatial patches to create using knn on coordinates of randoms",
     ),
 )
@@ -343,17 +348,13 @@ class YawCacheCreate(RailStage):
 
     inputs = [
         ("data", DataHandle),
-        ("rand", DataHandle | None),
+        ("rand", DataHandle),
     ]
     outputs = [
         ("cache", YawCacheHandle),
     ]
 
-    def create(
-        self,
-        data: DataFrame,
-        rand: DataFrame | None,
-    ) -> YawCacheHandle:
+    def create(self, data, rand) -> YawCacheHandle:
         if data is not None:
             self.set_data("data", data)
         if rand is not None:
@@ -363,27 +364,27 @@ class YawCacheCreate(RailStage):
         return self.get_handle("cache")
 
     def run(self) -> None:
-        patch_path = self.config_options["patches"]
+        patch_path = self.config_options["patches"].value
         if patch_path is not None:
             patch_centers = YawCache(patch_path).get_patch_centers()
         else:
             patch_centers = None
 
-        cache = YawCache.create(self.config_options["path"])
+        cache = YawCache.create(self.config_options["path"].value)
         if self.get_handle("rand"):
             # start with randoms in case that patch centers are generated
             rand: DataHandle = self.get_handle("rand")
             cache.store_rand(
                 rand.path,
                 patch_centers=patch_centers,
-                **self.config_options,
+                **unpack_stageparam_dict(self.config_options),
             )
         # patch centers will always be taken from randoms
         data: DataHandle = self.get_handle("data").path
         cache.store_data(
             data.path,
             patch_centers=patch_centers,
-            **self.config_options,
+            **unpack_stageparam_dict(self.config_options),
         )
 
         self.add_data("cache", cache)
@@ -406,6 +407,6 @@ class YawCacheDrop(RailStage):
         cache: YawCache = self.get_data("cache")
         cache.drop()
 
-    def create(self, cache: YawCache) -> None:
+    def create(self, cache) -> None:
         self.set_data("cache", cache)
         self.run()

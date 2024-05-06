@@ -21,7 +21,7 @@ from ceci.config import StageParameter
 from rail.core.data import DataHandle, QPHandle
 from rail.core.stage import RailStage
 from rail.yaw_rail.correlation import YawCorrFuncHandle
-from rail.yaw_rail.doc_utils import create_param, railstage_add_params_and_docs
+from rail.yaw_rail.utils import create_param, railstage_add_params_and_docs
 
 
 def _msg_fmt(name: str) -> str:
@@ -120,7 +120,7 @@ class YawSummarize(RailStage):
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        config = {p: self.config_options[p] for p in yaw_config_resampling}
+        config = {p: self.config_options[p].value for p in yaw_config_resampling}
         self.yaw_config = ResamplingConfig.create(**config)
 
     def summarize(
@@ -138,7 +138,7 @@ class YawSummarize(RailStage):
         return self.get_handle("output"), self.get_handle("yaw_cc")
 
     def run(self) -> None:
-        kwargs = {key: self.config_options[key] for key in yaw_config_est}
+        kwargs = {key: self.config_options[key].value for key in yaw_config_est}
         nz_cc = RedshiftData.from_corrfuncs(
             cross_corr=self.get_data("cross_corr"),
             ref_corr=self.get_data("ref_corr"),
