@@ -16,9 +16,9 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
-      #- id: no-commit-to-branch
-      #  name: Prevent main branch commits
-      #  description: Prevent the user from committing directly to the primary branch.
+      - id: no-commit-to-branch
+        name: Prevent main branch commits
+        description: Prevent the user from committing directly to the primary branch.
       - id: check-added-large-files
         name: Check for large files
         description: Prevent the user from committing very large files.
