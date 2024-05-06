@@ -7,14 +7,24 @@ stage configuration and building class doc-string.
 """
 from __future__ import annotations
 
+from abc import ABC
 from dataclasses import fields
 from typing import TYPE_CHECKING, Any, Literal, Type
 
 from yaw import config
 
 from ceci.config import StageParameter
+from rail.core.stage import RailStage
+
 if TYPE_CHECKING:
-    from rail.core.stage import RailStage
+    from rail.core.data import DataHandle
+
+
+def handle_has_path(handle: DataHandle) -> bool:
+    """This is a workaround for a potential bug in RAIL."""
+    if handle.path is None:
+        return False
+    return handle.path != "None"
 
 
 def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
@@ -50,9 +60,18 @@ def create_param(
     )
 
 
+class ParsedRailStage(ABC, RailStage):
+    def __init__(self, args, comm=None):
+        super().__init__(args, comm=comm)
+        for name, param in self.config_options.items():
+            if name in args:
+                param.set(args[name])
+
+
 def railstage_add_params_and_docs(**kwargs: StageParameter):
-    def decorator(cls: Type[RailStage]):
+    def decorator(cls: Type[ParsedRailStage]):
         cls.config_options.update(kwargs)
+        cls._method_parameters = set(kwargs.keys())  # pylint: disable=W0212
 
         param_str = "Parameters\n    ----------\n"
         for name, param in kwargs.items():
@@ -64,5 +83,8 @@ def railstage_add_params_and_docs(**kwargs: StageParameter):
     return decorator
 
 
-def unpack_stageparam_dict(params: dict[str, StageParameter]) -> dict[str, Any]:
-    return {key: param.value for key, param in params.items()}
+def unpack_stageparam_dict(stage: ParsedRailStage) -> dict[str, Any]:
+    return {
+        key: param for key, param in stage.get_config_dict().items()
+        if key in stage._method_parameters  # pylint: disable=W0212
+    }

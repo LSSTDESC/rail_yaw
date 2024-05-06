@@ -13,9 +13,9 @@ import h5py
 from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
 
 from rail.core.data import DataHandle
-from rail.core.stage import RailStage
 from rail.yaw_rail.cache import YawCacheHandle
 from rail.yaw_rail.utils import (
+    ParsedRailStage,
     create_param,
     railstage_add_params_and_docs,
     unpack_stageparam_dict,
@@ -57,7 +57,7 @@ class YawCorrFuncHandle(DataHandle):
     **yaw_config_zbins,
     **yaw_config_backend,
 )
-class YawAutoCorrelate(RailStage):
+class YawAutoCorrelate(ParsedRailStage):
     """
     Measure the autocorrelation function amplitude for the give data sample.
 
@@ -71,7 +71,7 @@ class YawAutoCorrelate(RailStage):
     """
     name = "YawAutoCorrelate"
 
-    config_options = RailStage.config_options.copy()
+    config_options = ParsedRailStage.config_options.copy()
 
     inputs = [("sample", YawCacheHandle)]
     outputs = [("corrfunc", YawCorrFuncHandle)]
@@ -79,7 +79,7 @@ class YawAutoCorrelate(RailStage):
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
         self.yaw_config = Configuration.create(
-            **unpack_stageparam_dict(self.config_options),
+            **unpack_stageparam_dict(self),
         )
 
     def correlate(
@@ -110,7 +110,7 @@ class YawAutoCorrelate(RailStage):
     **yaw_config_zbins,
     **yaw_config_backend,
 )
-class YawCrossCorrelate(RailStage):
+class YawCrossCorrelate(ParsedRailStage):
     """
     Measure the cross-correlation function amplitude for the give reference
     and unknown sample.
@@ -125,7 +125,7 @@ class YawCrossCorrelate(RailStage):
     """
     name = "YawCrossCorrelate"
 
-    config_options = RailStage.config_options.copy()
+    config_options = ParsedRailStage.config_options.copy()
 
     inputs = [("reference", YawCacheHandle), ("unknown", YawCacheHandle)]
     outputs = [("corrfunc", YawCorrFuncHandle)]
@@ -133,7 +133,7 @@ class YawCrossCorrelate(RailStage):
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
         self.yaw_config = Configuration.create(
-            **unpack_stageparam_dict(self.config_options),
+            **unpack_stageparam_dict(self),
         )
 
     def correlate(

@@ -19,9 +19,12 @@ from yaw import CorrFunc, RedshiftData, ResamplingConfig
 
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, QPHandle
-from rail.core.stage import RailStage
 from rail.yaw_rail.correlation import YawCorrFuncHandle
-from rail.yaw_rail.utils import create_param, railstage_add_params_and_docs
+from rail.yaw_rail.utils import (
+    ParsedRailStage,
+    create_param,
+    railstage_add_params_and_docs,
+)
 
 
 def _msg_fmt(name: str) -> str:
@@ -90,7 +93,7 @@ class YawRedshiftDataHandle(DataHandle):
     **yaw_config_est,
     **yaw_config_resampling,
 )
-class YawSummarize(RailStage):
+class YawSummarize(ParsedRailStage):
     """
     Convert the clustering redshift estimate to an QP ensemble by clipping
     negative values and substituting non-finite values.
@@ -106,7 +109,7 @@ class YawSummarize(RailStage):
     """
     name = "YawEstimate"
 
-    config_options = RailStage.config_options.copy()
+    config_options = ParsedRailStage.config_options.copy()
 
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
@@ -128,14 +131,14 @@ class YawSummarize(RailStage):
         cross_corr: CorrFunc,
         ref_corr: CorrFunc,
         unk_corr: CorrFunc | None,
-    ) -> tuple[QPHandle, YawRedshiftDataHandle]:
+    ) -> dict:
         self.set_data("cross_corr", cross_corr)
         self.set_data("ref_corr", ref_corr)
         if unk_corr is not None:
             self.set_data("unk_corr", unk_corr)
 
         self.run()
-        return self.get_handle("output"), self.get_handle("yaw_cc")
+        return {name: self.get_handle(name) for name, _ in self.outputs}
 
     def run(self) -> None:
         kwargs = {key: self.config_options[key].value for key in yaw_config_est}

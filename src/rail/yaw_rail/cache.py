@@ -18,14 +18,17 @@ from typing import TYPE_CHECKING, Any, TextIO
 from yaw import NewCatalog
 
 from ceci.config import StageParameter
-from rail.core.stage import RailStage
 from rail.core.data import DataHandle
 from rail.yaw_rail.utils import (
+    ParsedRailStage,
+    handle_has_path,
     railstage_add_params_and_docs,
     unpack_stageparam_dict,
 )
 
 if TYPE_CHECKING:
+    from pandas import DataFrame
+
     from yaw.catalogs.scipy import ScipyCatalog
     from yaw.core.coordinates import Coordinate, CoordSky
 
@@ -100,7 +103,7 @@ def cache_dataset(
     cache_directory: str,
     overwrite: bool = False,
     *,
-    source_path: str,
+    source: DataFrame | str,
     ra_name: str,
     dec_name: str,
     patch_name: str | None = None,
@@ -118,22 +121,35 @@ def cache_dataset(
             shutil.rmtree(cache_directory)
         else:
             raise FileExistsError(cache_directory)
+    os.makedirs(cache_directory)
 
-    patches = get_patch_method(
-        patch_centers=patch_centers,
-        patch_name=patch_name,
-        n_patches=n_patches,
-    )
-
-    NewCatalog().from_file(
-        filepath=source_path,
-        patches=patches,
-        ra=ra_name,
-        dec=dec_name,
-        redshift=redshift_name,
-        weight=weight_name,
-        cache_directory=cache_directory,
-    )
+    if isinstance(source, str):
+        patches = get_patch_method(
+            patch_centers=patch_centers,
+            patch_name=patch_name,
+            n_patches=n_patches,
+        )
+        NewCatalog().from_file(
+            filepath=source,
+            patches=patches,
+            ra=ra_name,
+            dec=dec_name,
+            redshift=redshift_name,
+            weight=weight_name,
+            cache_directory=cache_directory,
+        )
+    else:
+        NewCatalog().from_dataframe(
+            data=source,
+            ra_name=ra_name,
+            dec_name=dec_name,
+            patch_centers=patch_centers,
+            patch_name=patch_name,
+            n_patches=n_patches,
+            redshift_name=redshift_name,
+            weight_name=weight_name,
+            cache_directory=cache_directory,
+        )
 
 
 class YawCache:
@@ -164,6 +180,9 @@ class YawCache:
         os.makedirs(normalised)
         return cls(path)
 
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__} @ {self.path}"
+
     @property
     def path_data(self) -> str:
         """Get the path at which the data sample is stored."""
@@ -181,7 +200,7 @@ class YawCache:
 
     def store_data(
         self,
-        source_path: str,
+        source: DataFrame | str,
         ra_name: str,
         dec_name: str,
         *,
@@ -207,7 +226,7 @@ class YawCache:
         cache_dataset(
             self.path_data,
             overwrite,
-            source_path=source_path,
+            source=source,
             ra_name=ra_name,
             dec_name=dec_name,
             patch_name=patch_name,
@@ -234,7 +253,7 @@ class YawCache:
 
     def store_rand(
         self,
-        source_path: str,
+        source: DataFrame | str,
         ra_name: str,
         dec_name: str,
         *,
@@ -260,7 +279,7 @@ class YawCache:
         cache_dataset(
             self.path_rand,
             overwrite,
-            source_path=source_path,
+            source=source,
             ra_name=ra_name,
             dec_name=dec_name,
             patch_name=patch_name,
@@ -291,6 +310,8 @@ class YawCache:
 
     def drop(self) -> None:
         """Delete the entire cache directy. Invalidates this instance."""
+        if not os.path.exists(self.path):
+            return
         self.reset()
         # safety: if any other data is present, something is wrong and we
         # don't want to delete the cache root directory and all its contents
@@ -330,7 +351,7 @@ class YawCacheHandle(DataHandle):
     **yaw_config_columns,
     **yaw_config_patches,
 )
-class YawCacheCreate(RailStage):
+class YawCacheCreate(ParsedRailStage):
     """
     Split a data and (optional) random data set into spatial patches and
     cache them on disk.
@@ -344,7 +365,7 @@ class YawCacheCreate(RailStage):
     """
     name = "YawCacheCreate"
 
-    config_options = RailStage.config_options.copy()
+    config_options = ParsedRailStage.config_options.copy()
 
     inputs = [
         ("data", DataHandle),
@@ -355,10 +376,8 @@ class YawCacheCreate(RailStage):
     ]
 
     def create(self, data, rand) -> YawCacheHandle:
-        if data is not None:
-            self.set_data("data", data)
-        if rand is not None:
-            self.set_data("rand", rand)
+        self.set_data("data", data)
+        self.set_data("rand", rand)
 
         self.run()
         return self.get_handle("cache")
@@ -371,32 +390,31 @@ class YawCacheCreate(RailStage):
             patch_centers = None
 
         cache = YawCache.create(self.config_options["path"].value)
-        if self.get_handle("rand"):
-            # start with randoms in case that patch centers are generated
-            rand: DataHandle = self.get_handle("rand")
-            cache.store_rand(
-                rand.path,
-                patch_centers=patch_centers,
-                **unpack_stageparam_dict(self.config_options),
-            )
-        # patch centers will always be taken from randoms
-        data: DataHandle = self.get_handle("data").path
-        cache.store_data(
-            data.path,
+        # start with randoms in case that patch centers are generated
+        rand: DataHandle = self.get_handle("rand")
+        cache.store_rand(
+            source=rand.path if handle_has_path(rand) else rand.read(),
             patch_centers=patch_centers,
-            **unpack_stageparam_dict(self.config_options),
+            **unpack_stageparam_dict(self),
+        )
+        # patch centers will always be taken from randoms
+        data: DataHandle = self.get_handle("data")
+        cache.store_data(
+            source=data.path if handle_has_path(data) else data.read(),
+            patch_centers=patch_centers,
+            **unpack_stageparam_dict(self),
         )
 
         self.add_data("cache", cache)
 
 
-class YawCacheDrop(RailStage):
+class YawCacheDrop(ParsedRailStage):
     """
     Delete an existing cache.
     """
     name = "YawCacheDrop"
 
-    config_options = RailStage.config_options.copy()
+    config_options = ParsedRailStage.config_options.copy()
 
     inputs = [
         ("cache", YawCacheHandle),
@@ -405,8 +423,9 @@ class YawCacheDrop(RailStage):
 
     def run(self) -> None:
         cache: YawCache = self.get_data("cache")
+        print(cache)
         cache.drop()
 
-    def create(self, cache) -> None:
+    def drop(self, cache) -> None:
         self.set_data("cache", cache)
         self.run()
