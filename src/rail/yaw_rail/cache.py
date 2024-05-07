@@ -22,12 +22,9 @@ from ceci.config import StageParameter
 from rail.core.data import DataHandle, TableHandle
 from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
 from rail.yaw_rail.utils import (
-    ParsedRailStage,
-    get_optional_handle,
+    YawRailStage,
     handle_has_path,
-    railstage_add_params_and_docs,
-    set_optional_data,
-    unpack_stageparam_dict,
+    add_params_and_docs,
 )
 
 if TYPE_CHECKING:
@@ -356,13 +353,13 @@ class YawCacheHandle(DataHandle):
             json.dump(inst_args, f)
 
 
-@railstage_add_params_and_docs(
+@add_params_and_docs(
     path=config_cache_path,
     **yaw_config_columns,
     **yaw_config_patches,
     verbose=yaw_config_verbose,
 )
-class YawCacheCreate(ParsedRailStage):
+class YawCacheCreate(YawRailStage):
     """
     Split a data and (optional) random data set into spatial patches and
     cache them on disk.
@@ -377,7 +374,7 @@ class YawCacheCreate(ParsedRailStage):
 
     name = "YawCacheCreate"
 
-    config_options = ParsedRailStage.config_options.copy()
+    config_options = YawRailStage.config_options.copy()
 
     inputs = [
         ("data", TableHandle),
@@ -391,7 +388,7 @@ class YawCacheCreate(ParsedRailStage):
         self, data: TableHandle, rand: TableHandle | None = None
     ) -> YawCacheHandle:
         self.set_data("data", data)
-        set_optional_data(self, "rand", rand)
+        self.set_optional_data("rand", rand)
 
         self.run()
         return self.get_handle("cache")
@@ -406,32 +403,32 @@ class YawCacheCreate(ParsedRailStage):
 
             cache = YawCache.create(self.config_options["path"].value)
 
-            rand: TableHandle | None = get_optional_handle(self, "rand")
+            rand: TableHandle | None = self.get_optional_handle("rand")
             if rand is not None:
                 cache.store_rand(
                     source=rand.path if handle_has_path(rand) else rand.read(),
                     patch_centers=patch_centers,
-                    **unpack_stageparam_dict(self),
+                    **self.get_stageparams(),
                 )
 
             data: TableHandle = self.get_handle("data")
             cache.store_data(
                 source=data.path if handle_has_path(data) else data.read(),
                 patch_centers=patch_centers,
-                **unpack_stageparam_dict(self),
+                **self.get_stageparams(),
             )
 
         self.add_data("cache", cache)
 
 
-class YawCacheDrop(ParsedRailStage):
+class YawCacheDrop(YawRailStage):
     """
     Delete an existing cache.
     """
 
     name = "YawCacheDrop"
 
-    config_options = ParsedRailStage.config_options.copy()
+    config_options = YawRailStage.config_options.copy()
 
     inputs = [
         ("cache", YawCacheHandle),

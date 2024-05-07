@@ -8,6 +8,7 @@ from which the final correlation amplitudes are computed.
 
 from __future__ import annotations
 
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 import h5py
@@ -17,10 +18,9 @@ from rail.core.data import DataHandle
 from rail.yaw_rail.cache import YawCacheHandle
 from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
 from rail.yaw_rail.utils import (
-    ParsedRailStage,
+    YawRailStage,
     create_param,
-    railstage_add_params_and_docs,
-    unpack_stageparam_dict,
+    add_params_and_docs,
 )
 
 if TYPE_CHECKING:
@@ -54,19 +54,36 @@ class YawCorrFuncHandle(DataHandle):
         data.to_file(path)
 
 
-def make_yaw_config(stage: ParsedRailStage) -> Configuration:
-    return Configuration.create(
-        **unpack_stageparam_dict(stage, exclude=["verbose"]),
-    )
+class YawBaseCorrelate(YawRailStage):
+    name = "YawBaseCorrelate"
+
+    config_options = YawRailStage.config_options.copy()
+
+    inputs: list[tuple[str, YawCacheHandle]]
+    outputs = [("corrfunc", YawCorrFuncHandle)]
+
+    def __init__(self, args, comm=None):
+        super().__init__(args, comm=comm)
+        self.yaw_config = Configuration.create(
+            **self.get_stageparams(exclude=["verbose"]),
+        )
+
+    @abstractmethod
+    def correlate(self, *inputs: YawCache) -> YawCorrFuncHandle:
+        pass
+
+    @abstractmethod
+    def run(self) -> None:
+        pass
 
 
-@railstage_add_params_and_docs(
+@add_params_and_docs(
     **yaw_config_scales,
     **yaw_config_zbins,
     **yaw_config_backend,
     verbose=yaw_config_verbose,
 )
-class YawAutoCorrelate(ParsedRailStage):
+class YawAutoCorrelate(YawBaseCorrelate):
     """
     Measure the autocorrelation function amplitude for the give data sample.
 
@@ -80,17 +97,9 @@ class YawAutoCorrelate(ParsedRailStage):
     """
 
     name = "YawAutoCorrelate"
-
-    config_options = ParsedRailStage.config_options.copy()
-
     inputs = [("sample", YawCacheHandle)]
-    outputs = [("corrfunc", YawCorrFuncHandle)]
 
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
-        self.yaw_config = make_yaw_config(self)
-
-    def correlate(self, sample: YawCache) -> YawCorrFuncHandle:
+    def correlate(self, sample: YawCache) -> YawCorrFuncHandle:  # pylint: disable=W0221
         self.set_data("sample", sample)
 
         self.run()
@@ -112,13 +121,13 @@ class YawAutoCorrelate(ParsedRailStage):
         self.add_data("corrfunc", corr)
 
 
-@railstage_add_params_and_docs(
+@add_params_and_docs(
     **yaw_config_scales,
     **yaw_config_zbins,
     **yaw_config_backend,
     verbose=yaw_config_verbose,
 )
-class YawCrossCorrelate(ParsedRailStage):
+class YawCrossCorrelate(YawBaseCorrelate):
     """
     Measure the cross-correlation function amplitude for the give reference
     and unknown sample.
@@ -133,17 +142,11 @@ class YawCrossCorrelate(ParsedRailStage):
     """
 
     name = "YawCrossCorrelate"
-
-    config_options = ParsedRailStage.config_options.copy()
-
     inputs = [("reference", YawCacheHandle), ("unknown", YawCacheHandle)]
-    outputs = [("corrfunc", YawCorrFuncHandle)]
 
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
-        self.yaw_config = make_yaw_config(self)
-
-    def correlate(self, reference: YawCache, unknown: YawCache) -> YawCorrFuncHandle:
+    def correlate(  # pylint: disable=W0221
+        self, reference: YawCache, unknown: YawCache
+    ) -> YawCorrFuncHandle:
         self.set_data("reference", reference)
         self.set_data("unknown", unknown)
 

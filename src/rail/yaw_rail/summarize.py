@@ -23,11 +23,9 @@ from rail.core.data import DataHandle, QPHandle
 from rail.yaw_rail.correlation import YawCorrFuncHandle
 from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
 from rail.yaw_rail.utils import (
-    ParsedRailStage,
+    YawRailStage,
     create_param,
-    get_optional_data,
-    railstage_add_params_and_docs,
-    set_optional_data,
+    add_params_and_docs,
 )
 
 
@@ -97,12 +95,12 @@ class YawRedshiftDataHandle(DataHandle):
             pickle.dump(data, f)
 
 
-@railstage_add_params_and_docs(
+@add_params_and_docs(
     **yaw_config_est,
     **yaw_config_resampling,
     verbose=yaw_config_verbose,
 )
-class YawSummarize(ParsedRailStage):
+class YawSummarize(YawRailStage):
     """
     Convert the clustering redshift estimate to an QP ensemble by clipping
     negative values and substituting non-finite values.
@@ -119,7 +117,7 @@ class YawSummarize(ParsedRailStage):
 
     name = "YawEstimate"
 
-    config_options = ParsedRailStage.config_options.copy()
+    config_options = YawRailStage.config_options.copy()
 
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
@@ -143,8 +141,8 @@ class YawSummarize(ParsedRailStage):
         unk_corr: CorrFunc | None = None,
     ) -> dict:
         self.set_data("cross_corr", cross_corr)
-        set_optional_data(self, "ref_corr", ref_corr)
-        set_optional_data(self, "unk_corr", unk_corr)
+        self.set_optional_data("ref_corr", ref_corr)
+        self.set_optional_data("unk_corr", unk_corr)
 
         self.run()
         return {name: self.get_handle(name) for name, _ in self.outputs}
@@ -152,8 +150,8 @@ class YawSummarize(ParsedRailStage):
     def run(self) -> None:
         with yaw_logged(self.config_options["verbose"].value):
             cross_corr: CorrFunc = self.get_data("cross_corr")
-            ref_corr: CorrFunc | None = get_optional_data(self, "ref_corr")
-            unk_corr: CorrFunc | None = get_optional_data(self, "unk_corr")
+            ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
+            unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
             kwargs = {key: self.config_options[key].value for key in yaw_config_est}
 
             nz_cc = RedshiftData.from_corrfuncs(

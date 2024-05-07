@@ -24,9 +24,7 @@ if TYPE_CHECKING:
 
 def handle_has_path(handle: DataHandle) -> bool:
     """This is a workaround for a potential bug in RAIL."""
-    if handle.path is None:
-        return False
-    return handle.path != "None"
+    return handle.path is not None and handle.path != "None"
 
 
 def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
@@ -62,7 +60,7 @@ def create_param(
     )
 
 
-class ParsedRailStage(ABC, RailStage):
+class YawRailStage(ABC, RailStage):
     stage_parameters: set[str]
 
     def __init__(self, args, comm=None):
@@ -72,9 +70,34 @@ class ParsedRailStage(ABC, RailStage):
             if name in args:
                 param.set(args[name])
 
+    def get_stageparams(self, exclude: Container[str] | None = None) -> dict[str, Any]:
+        if exclude is None:
+            exclude = []
+        return {
+            key: param
+            for key, param in self.get_config_dict(reduce_config=True).items()
+            if key in self.stage_parameters and key not in exclude
+        }
 
-def railstage_add_params_and_docs(**kwargs: StageParameter):
-    def decorator(cls: Type[ParsedRailStage]):
+    def get_optional_handle(self, tag: str, **kwarg) -> DataHandle | None:
+        try:
+            return self.get_handle(tag, allow_missing=False, **kwarg)
+        except KeyError:
+            return None
+
+    def get_optional_data(self, tag: str, **kwarg) -> Any | None:
+        try:
+            return self.get_data(tag, allow_missing=False, **kwarg)
+        except KeyError:
+            return None
+
+    def set_optional_data(self, tag: str, value: Any | None, **kwarg) -> None:
+        if value is not None:
+            self.set_data(tag, value, **kwarg)
+
+
+def add_params_and_docs(**kwargs: StageParameter):
+    def decorator(cls: Type[YawRailStage]):
         cls.config_options.update(kwargs)
         cls.stage_parameters = set(kwargs.keys())
 
@@ -88,34 +111,3 @@ def railstage_add_params_and_docs(**kwargs: StageParameter):
         return cls
 
     return decorator
-
-
-def unpack_stageparam_dict(
-    stage: ParsedRailStage, exclude: Container[str] | None = None
-) -> dict[str, Any]:
-    if exclude is None:
-        exclude = []
-    return {
-        key: param
-        for key, param in stage.get_config_dict().items()
-        if key in stage.stage_parameters and key not in exclude
-    }
-
-
-def get_optional_handle(stage: RailStage, tag: str, **kwarg) -> DataHandle | None:
-    try:
-        return stage.get_handle(tag, allow_missing=False, **kwarg)
-    except KeyError:
-        return None
-
-
-def get_optional_data(stage: RailStage, tag: str, **kwarg) -> Any | None:
-    try:
-        return stage.get_data(tag, allow_missing=False, **kwarg)
-    except KeyError:
-        return None
-
-
-def set_optional_data(stage: RailStage, tag: str, value: Any | None, **kwarg) -> None:
-    if value is not None:
-        stage.set_data(tag, value, **kwarg)
