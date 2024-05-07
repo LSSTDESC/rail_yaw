@@ -18,6 +18,9 @@ dynamic = ["version"]
 
 dependencies = [
     "numpy",
+    "h5py",
+    "qp",
+    "yet_another_wizz",
 ]
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
