@@ -8,6 +8,17 @@ from __future__ import annotations
 
 import logging
 import sys
+from contextlib import contextmanager
+
+from ceci.stage import StageParameter
+
+
+yaw_config_verbose = StageParameter(
+    str,
+    required=False,
+    default="info",
+    msg="lowest log level emitted by *yet_another_wizz*",
+)
 
 
 class OnlyYawFilter(logging.Filter):
@@ -30,14 +41,12 @@ def init_logger(level: str = "info") -> logging.Logger:
     return logging.getLogger()
 
 
-class YawLogged:
-    def __init__(self, level: str = "debug") -> None:
-        self.logger = init_logger(level=level)
-
-    def __enter__(self) -> YawLogged:
-        return self
-
-    def __exit__(self, *args, **kwargs) -> None:
-        for handler in self.logger.handlers[:]:
+@contextmanager
+def yaw_logged(level: str = "debug"):
+    logger = init_logger(level=level)
+    try:
+        yield logger
+    finally:
+        for handler in logger.handlers[:]:
             handler.close()
-            self.logger.removeHandler(handler)
+            logger.removeHandler(handler)

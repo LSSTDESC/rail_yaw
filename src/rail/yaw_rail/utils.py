@@ -9,6 +9,7 @@ stage configuration and building class doc-string.
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Container
 from dataclasses import fields
 from typing import TYPE_CHECKING, Any, Literal, Type
 
@@ -89,11 +90,15 @@ def railstage_add_params_and_docs(**kwargs: StageParameter):
     return decorator
 
 
-def unpack_stageparam_dict(stage: ParsedRailStage) -> dict[str, Any]:
+def unpack_stageparam_dict(
+    stage: ParsedRailStage, exclude: Container[str] | None = None
+) -> dict[str, Any]:
+    if exclude is None:
+        exclude = []
     return {
         key: param
         for key, param in stage.get_config_dict().items()
-        if key in stage.stage_parameters
+        if key in stage.stage_parameters and key not in exclude
     }
 
 

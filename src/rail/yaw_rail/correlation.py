@@ -15,7 +15,7 @@ from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
 
 from rail.core.data import DataHandle
 from rail.yaw_rail.cache import YawCacheHandle
-from rail.yaw_rail.logging import YawLogged
+from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
 from rail.yaw_rail.utils import (
     ParsedRailStage,
     create_param,
@@ -54,10 +54,17 @@ class YawCorrFuncHandle(DataHandle):
         data.to_file(path)
 
 
+def make_yaw_config(stage: ParsedRailStage) -> Configuration:
+    return Configuration.create(
+        **unpack_stageparam_dict(stage, exclude=["verbose"]),
+    )
+
+
 @railstage_add_params_and_docs(
     **yaw_config_scales,
     **yaw_config_zbins,
     **yaw_config_backend,
+    verbose=yaw_config_verbose,
 )
 class YawAutoCorrelate(ParsedRailStage):
     """
@@ -81,9 +88,7 @@ class YawAutoCorrelate(ParsedRailStage):
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        self.yaw_config = Configuration.create(
-            **unpack_stageparam_dict(self),
-        )
+        self.yaw_config = make_yaw_config(self)
 
     def correlate(self, sample: YawCache) -> YawCorrFuncHandle:
         self.set_data("sample", sample)
@@ -92,7 +97,7 @@ class YawAutoCorrelate(ParsedRailStage):
         return self.get_handle("corrfunc")
 
     def run(self) -> None:
-        with YawLogged():
+        with yaw_logged(self.config_options["verbose"].value):
             cache_sample: YawCache = self.get_data("sample")
             data = cache_sample.get_data()
             rand = cache_sample.get_rand()
@@ -111,6 +116,7 @@ class YawAutoCorrelate(ParsedRailStage):
     **yaw_config_scales,
     **yaw_config_zbins,
     **yaw_config_backend,
+    verbose=yaw_config_verbose,
 )
 class YawCrossCorrelate(ParsedRailStage):
     """
@@ -135,9 +141,7 @@ class YawCrossCorrelate(ParsedRailStage):
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        self.yaw_config = Configuration.create(
-            **unpack_stageparam_dict(self),
-        )
+        self.yaw_config = make_yaw_config(self)
 
     def correlate(self, reference: YawCache, unknown: YawCache) -> YawCorrFuncHandle:
         self.set_data("reference", reference)
@@ -147,7 +151,7 @@ class YawCrossCorrelate(ParsedRailStage):
         return self.get_handle("corrfunc")
 
     def run(self) -> None:
-        with YawLogged():
+        with yaw_logged(self.config_options["verbose"].value):
             cache_ref: YawCache = self.get_data("reference")
             data_ref = cache_ref.get_data()
             rand_ref = cache_ref.get_rand()

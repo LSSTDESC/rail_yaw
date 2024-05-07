@@ -21,7 +21,7 @@ from yaw import CorrFunc, RedshiftData, ResamplingConfig
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, QPHandle
 from rail.yaw_rail.correlation import YawCorrFuncHandle
-from rail.yaw_rail.logging import YawLogged
+from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
 from rail.yaw_rail.utils import (
     ParsedRailStage,
     create_param,
@@ -100,6 +100,7 @@ class YawRedshiftDataHandle(DataHandle):
 @railstage_add_params_and_docs(
     **yaw_config_est,
     **yaw_config_resampling,
+    verbose=yaw_config_verbose,
 )
 class YawSummarize(ParsedRailStage):
     """
@@ -149,7 +150,7 @@ class YawSummarize(ParsedRailStage):
         return {name: self.get_handle(name) for name, _ in self.outputs}
 
     def run(self) -> None:
-        with YawLogged():
+        with yaw_logged(self.config_options["verbose"].value):
             cross_corr: CorrFunc = self.get_data("cross_corr")
             ref_corr: CorrFunc | None = get_optional_data(self, "ref_corr")
             unk_corr: CorrFunc | None = get_optional_data(self, "unk_corr")

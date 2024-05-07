@@ -20,7 +20,7 @@ from yaw import NewCatalog
 
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, TableHandle
-from rail.yaw_rail.logging import YawLogged
+from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
 from rail.yaw_rail.utils import (
     ParsedRailStage,
     get_optional_handle,
@@ -360,6 +360,7 @@ class YawCacheHandle(DataHandle):
     path=config_cache_path,
     **yaw_config_columns,
     **yaw_config_patches,
+    verbose=yaw_config_verbose,
 )
 class YawCacheCreate(ParsedRailStage):
     """
@@ -396,7 +397,7 @@ class YawCacheCreate(ParsedRailStage):
         return self.get_handle("cache")
 
     def run(self) -> None:
-        with YawLogged():
+        with yaw_logged(self.config_options["verbose"].value):
             patch_path = self.config_options["patches"].value
             if patch_path is not None:
                 patch_centers = YawCache(patch_path).get_patch_centers()
@@ -438,9 +439,8 @@ class YawCacheDrop(ParsedRailStage):
     outputs = []
 
     def run(self) -> None:
-        with YawLogged():
-            cache: YawCache = self.get_data("cache")
-            cache.drop()
+        cache: YawCache = self.get_data("cache")
+        cache.drop()
 
     def drop(self, cache: YawCache) -> None:
         self.set_data("cache", cache)
