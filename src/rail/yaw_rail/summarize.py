@@ -20,6 +20,7 @@ from yaw import CorrFunc, RedshiftData, ResamplingConfig
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, QPHandle
 from rail.yaw_rail.correlation import YawCorrFuncHandle
+from rail.yaw_rail.logging import YawLogged
 from rail.yaw_rail.utils import (
     ParsedRailStage,
     create_param,
@@ -114,7 +115,7 @@ class YawSummarize(ParsedRailStage):
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
         ("ref_corr", YawCorrFuncHandle),
-        ("unk_corr", YawCorrFuncHandle | None),  # remove if cumbersome
+        ("unk_corr", YawCorrFuncHandle),
     ]
     outputs = [
         ("output", QPHandle),
@@ -129,11 +130,12 @@ class YawSummarize(ParsedRailStage):
     def summarize(
         self,
         cross_corr: CorrFunc,
-        ref_corr: CorrFunc,
-        unk_corr: CorrFunc | None,
+        ref_corr: CorrFunc | None = None,
+        unk_corr: CorrFunc | None = None,
     ) -> dict:
         self.set_data("cross_corr", cross_corr)
-        self.set_data("ref_corr", ref_corr)
+        if ref_corr is not None:
+            self.set_data("ref_corr", ref_corr)
         if unk_corr is not None:
             self.set_data("unk_corr", unk_corr)
 
@@ -141,17 +143,28 @@ class YawSummarize(ParsedRailStage):
         return {name: self.get_handle(name) for name, _ in self.outputs}
 
     def run(self) -> None:
-        kwargs = {key: self.config_options[key].value for key in yaw_config_est}
-        nz_cc = RedshiftData.from_corrfuncs(
-            cross_corr=self.get_data("cross_corr"),
-            ref_corr=self.get_data("ref_corr"),
-            unk_corr=self.get_data("unk_corr"),
-            config=ResamplingConfig(),
-            **kwargs,
-        )
+        with YawLogged():
+            cross_corr = self.get_data("cross_corr")
+            try:
+                ref_corr = self.get_data("ref_corr", allow_missing=False)
+            except KeyError:
+                ref_corr = None
+            try:
+                unk_corr = self.get_data("unk_corr", allow_missing=False)
+            except KeyError:
+                unk_corr = None
+            kwargs = {key: self.config_options[key].value for key in yaw_config_est}
 
-        nz_clipped = clip_negative_values(nz_cc)
-        ensemble = redshift_data_to_qp(nz_clipped)
+            nz_cc = RedshiftData.from_corrfuncs(
+                cross_corr=cross_corr,
+                ref_corr=ref_corr,
+                unk_corr=unk_corr,
+                config=ResamplingConfig(),
+                **kwargs,
+            )
+
+            nz_clipped = clip_negative_values(nz_cc)
+            ensemble = redshift_data_to_qp(nz_clipped)
 
         self.add_data("output", ensemble)
         self.add_data("yaw_cc", nz_cc)

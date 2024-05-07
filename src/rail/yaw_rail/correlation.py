@@ -14,6 +14,7 @@ from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
 
 from rail.core.data import DataHandle
 from rail.yaw_rail.cache import YawCacheHandle
+from rail.yaw_rail.logging import YawLogged
 from rail.yaw_rail.utils import (
     ParsedRailStage,
     create_param,
@@ -82,26 +83,25 @@ class YawAutoCorrelate(ParsedRailStage):
             **unpack_stageparam_dict(self),
         )
 
-    def correlate(
-        self,
-        sample: YawCache,
-    ) -> YawCorrFuncHandle:
+    def correlate(self, sample: YawCache) -> YawCorrFuncHandle:
         self.set_data("sample", sample)
 
         self.run()
         return self.get_handle("corrfunc")
 
     def run(self) -> None:
-        cache_sample: YawCache = self.get_data("sample")
-        data = cache_sample.get_data()
-        rand = cache_sample.get_rand()
+        with YawLogged():
+            cache_sample: YawCache = self.get_data("sample")
+            data = cache_sample.get_data()
+            rand = cache_sample.get_rand()
 
-        corr = autocorrelate(
-            config=self.yaw_config,
-            data=data,
-            random=rand,
-            compute_rr=True,
-        )
+            corr = autocorrelate(
+                config=self.yaw_config,
+                data=data,
+                random=rand,
+                compute_rr=True,
+            )
+
         self.add_data("corrfunc", corr)
 
 
@@ -136,11 +136,7 @@ class YawCrossCorrelate(ParsedRailStage):
             **unpack_stageparam_dict(self),
         )
 
-    def correlate(
-        self,
-        reference: YawCache,
-        unknown: YawCache,
-    ) -> YawCorrFuncHandle:
+    def correlate(self, reference: YawCache, unknown: YawCache) -> YawCorrFuncHandle:
         self.set_data("reference", reference)
         self.set_data("unknown", unknown)
 
@@ -148,22 +144,24 @@ class YawCrossCorrelate(ParsedRailStage):
         return self.get_handle("corrfunc")
 
     def run(self) -> None:
-        cache_ref: YawCache = self.get_data("reference")
-        data_ref = cache_ref.get_data()
-        rand_ref = cache_ref.get_rand()
+        with YawLogged():
+            cache_ref: YawCache = self.get_data("reference")
+            data_ref = cache_ref.get_data()
+            rand_ref = cache_ref.get_rand()
 
-        cache_unk: YawCache = self.get_data("unknown")
-        data_unk = cache_unk.get_data()
-        try:
-            rand_unk = cache_unk.get_rand()
-        except FileNotFoundError:
-            rand_unk = None
+            cache_unk: YawCache = self.get_data("unknown")
+            data_unk = cache_unk.get_data()
+            try:
+                rand_unk = cache_unk.get_rand()
+            except FileNotFoundError:
+                rand_unk = None
 
-        corr = crosscorrelate(
-            config=self.yaw_config,
-            reference=data_ref,
-            unknown=data_unk,
-            ref_rand=rand_ref,
-            unk_rand=rand_unk,
-        )
+            corr = crosscorrelate(
+                config=self.yaw_config,
+                reference=data_ref,
+                unknown=data_unk,
+                ref_rand=rand_ref,
+                unk_rand=rand_unk,
+            )
+
         self.add_data("corrfunc", corr)

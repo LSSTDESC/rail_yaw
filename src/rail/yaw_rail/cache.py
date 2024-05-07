@@ -18,7 +18,8 @@ from typing import TYPE_CHECKING, Any, TextIO
 from yaw import NewCatalog
 
 from ceci.config import StageParameter
-from rail.core.data import DataHandle
+from rail.core.data import DataHandle, TableHandle
+from rail.yaw_rail.logging import YawLogged
 from rail.yaw_rail.utils import (
     ParsedRailStage,
     handle_has_path,
@@ -139,6 +140,9 @@ def cache_dataset(
             cache_directory=cache_directory,
         )
     else:
+        if patch_centers is not None:
+            patch_name = None
+            n_patches = None
         NewCatalog().from_dataframe(
             data=source,
             ra_name=ra_name,
@@ -368,42 +372,44 @@ class YawCacheCreate(ParsedRailStage):
     config_options = ParsedRailStage.config_options.copy()
 
     inputs = [
-        ("data", DataHandle),
-        ("rand", DataHandle),
+        ("data", TableHandle),
+        ("rand", TableHandle),
     ]
     outputs = [
         ("cache", YawCacheHandle),
     ]
 
-    def create(self, data, rand) -> YawCacheHandle:
+    def create(self, data: TableHandle, rand: TableHandle | None = None) -> YawCacheHandle:
         self.set_data("data", data)
-        self.set_data("rand", rand)
+        if rand is not None:
+            self.set_data("rand", rand)
 
         self.run()
         return self.get_handle("cache")
 
     def run(self) -> None:
-        patch_path = self.config_options["patches"].value
-        if patch_path is not None:
-            patch_centers = YawCache(patch_path).get_patch_centers()
-        else:
-            patch_centers = None
+        with YawLogged():
+            patch_path = self.config_options["patches"].value
+            if patch_path is not None:
+                patch_centers = YawCache(patch_path).get_patch_centers()
+            else:
+                patch_centers = None
 
-        cache = YawCache.create(self.config_options["path"].value)
-        # start with randoms in case that patch centers are generated
-        rand: DataHandle = self.get_handle("rand")
-        cache.store_rand(
-            source=rand.path if handle_has_path(rand) else rand.read(),
-            patch_centers=patch_centers,
-            **unpack_stageparam_dict(self),
-        )
-        # patch centers will always be taken from randoms
-        data: DataHandle = self.get_handle("data")
-        cache.store_data(
-            source=data.path if handle_has_path(data) else data.read(),
-            patch_centers=patch_centers,
-            **unpack_stageparam_dict(self),
-        )
+            cache = YawCache.create(self.config_options["path"].value)
+            # start with randoms in case that patch centers are generated
+            rand: TableHandle = self.get_handle("rand")
+            cache.store_rand(
+                source=rand.path if handle_has_path(rand) else rand.read(),
+                patch_centers=patch_centers,
+                **unpack_stageparam_dict(self),
+            )
+            # patch centers will always be taken from randoms
+            data: TableHandle = self.get_handle("data")
+            cache.store_data(
+                source=data.path if handle_has_path(data) else data.read(),
+                patch_centers=patch_centers,
+                **unpack_stageparam_dict(self),
+            )
 
         self.add_data("cache", cache)
 
@@ -422,10 +428,10 @@ class YawCacheDrop(ParsedRailStage):
     outputs = []
 
     def run(self) -> None:
-        cache: YawCache = self.get_data("cache")
-        print(cache)
-        cache.drop()
+        with YawLogged():
+            cache: YawCache = self.get_data("cache")
+            cache.drop()
 
-    def drop(self, cache) -> None:
+    def drop(self, cache: YawCache) -> None:
         self.set_data("cache", cache)
         self.run()
