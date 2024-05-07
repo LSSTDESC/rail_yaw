@@ -75,6 +75,12 @@ yaw_config_patches = dict(
     ),
 )
 
+config_cache_path = StageParameter(
+    str,
+    required=True,
+    msg="path to cache directory, must not exist"
+)
+
 
 def normalise_path(path: str) -> str:
     """
@@ -347,11 +353,7 @@ class YawCacheHandle(DataHandle):
 
 
 @railstage_add_params_and_docs(
-    path=StageParameter(
-        str,
-        required=True,
-        msg="path to cache directory, must not exist"
-    ),
+    path=config_cache_path,
     **yaw_config_columns,
     **yaw_config_patches,
 )
