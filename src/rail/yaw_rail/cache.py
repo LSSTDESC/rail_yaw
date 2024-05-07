@@ -219,7 +219,7 @@ class YawCache:
         redshift_name: str | None = None,
         weight_name: str | None = None,
         overwrite: bool = False,
-        **kwargs,  # pylint: disable=W0613
+        **kwargs,  # pylint: disable=W0613; allows dict-unpacking of whole config
     ) -> None:
         """
         Split a data set, specified through a file path, into spatial patches
@@ -272,7 +272,7 @@ class YawCache:
         redshift_name: str | None = None,
         weight_name: str | None = None,
         overwrite: bool = False,
-        **kwargs,  # pylint: disable=W0613
+        **kwargs,  # pylint: disable=W0613; allows dict-unpacking of whole config
     ) -> None:
         """
         Split a data set, specified through a file path, into spatial patches

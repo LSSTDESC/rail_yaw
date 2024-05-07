@@ -62,6 +62,8 @@ def create_param(
 
 
 class ParsedRailStage(ABC, RailStage):
+    stage_parameters: set[str]
+
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
         for name, param in self.config_options.items():
@@ -72,12 +74,13 @@ class ParsedRailStage(ABC, RailStage):
 def railstage_add_params_and_docs(**kwargs: StageParameter):
     def decorator(cls: Type[ParsedRailStage]):
         cls.config_options.update(kwargs)
-        cls._method_parameters = set(kwargs.keys())  # pylint: disable=W0212
+        cls.stage_parameters = set(kwargs.keys())
 
         param_str = "Parameters\n    ----------\n"
         for name, param in kwargs.items():
+            msg = param._help  # pylint: disable=W0212; PR filed in ceci
             param_str += f"    {name}: {param.dtype.__name__} \n"
-            param_str += f"        {param._help}\n"  # pylint: disable=W0212
+            param_str += f"        {msg}\n"
         cls.__doc__ = cls.__doc__.replace("@Parameters", param_str)
 
         return cls
@@ -89,5 +92,5 @@ def unpack_stageparam_dict(stage: ParsedRailStage) -> dict[str, Any]:
     return {
         key: param
         for key, param in stage.get_config_dict().items()
-        if key in stage._method_parameters  # pylint: disable=W0212
+        if key in stage.stage_parameters
     }

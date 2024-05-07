@@ -9,8 +9,6 @@ from numpy.random import default_rng
 from pytest import fixture
 from yaw import UniformRandoms
 
-from rail.core.stage import RailStage
-
 from rail.yaw_rail import (
     YawAutoCorrelate,
     YawCacheCreate,
@@ -22,14 +20,6 @@ from rail.yaw_rail import (
 if TYPE_CHECKING:
     from numpy.random import Generator
     from pandas import DataFrame
-    from rail.core.data import DataStore
-
-
-@fixture(name="data_store")
-def fixture_data_store() -> DataStore:
-    DS = RailStage.data_store
-    DS.__class__.allow_overwrite = True
-    return DS
 
 
 @fixture(name="seed")
@@ -112,10 +102,7 @@ def assert_cols_match(path_a: Path, path_b: Path, *, ignore_cols: list[int]) -> 
         npt.assert_array_equal(col_a, col_b)
 
 
-def test_run(
-    data_store, tmp_path, mock_data, mock_rand  # pylint: disable=W0613
-) -> None:
-    # data_store must be called at least once, which is done here implicitly
+def test_run(tmp_path, mock_data, mock_rand) -> None:
     cache_ref = YawCacheCreate.make_stage(
         name="cache_ref",
         path=f"{tmp_path}/test_ref",
