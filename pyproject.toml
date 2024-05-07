@@ -16,7 +16,13 @@ classifiers = [
 ]
 dynamic = ["version"]
 
-dependencies = []
+dependencies = [
+    "numpy",
+    "h5py",
+    "pz-rail-base",
+    "qp-prob",
+    "yet_another_wizz",
+]
 
 # On a mac, install optional dependencies with `pip install '.[dev]'` (include the single quotes)
 [project.optional-dependencies]
@@ -58,6 +64,10 @@ disable = [
     "duplicate-code",
     "use-dict-literal",
     "broad-exception-caught",
+    # some yet_another_wizz API calls violate this
+    "too-many-arguments",
+    # some other nuisances
+    "unspecified-encoding",
 ]
 max-line-length = 110
 max-locals = 50
