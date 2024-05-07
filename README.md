@@ -68,6 +68,5 @@ section of the main RAIL Read The Docs page.
 
 ## TODO List
 
-- Configure Codecov for the repository (https://github.com/apps/codecov)
 - Create an example notebook
 - Citing?
