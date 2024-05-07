@@ -5,6 +5,7 @@ This file implements a utility functions that automatically create
 it provides a decorator for RAIL stages that automatically populates the
 stage configuration and building class doc-string.
 """
+
 from __future__ import annotations
 
 from abc import ABC
@@ -80,11 +81,13 @@ def railstage_add_params_and_docs(**kwargs: StageParameter):
         cls.__doc__ = cls.__doc__.replace("@Parameters", param_str)
 
         return cls
+
     return decorator
 
 
 def unpack_stageparam_dict(stage: ParsedRailStage) -> dict[str, Any]:
     return {
-        key: param for key, param in stage.get_config_dict().items()
+        key: param
+        for key, param in stage.get_config_dict().items()
         if key in stage._method_parameters  # pylint: disable=W0212
     }

@@ -41,6 +41,7 @@ def fixture_seed() -> int:
 def fixture_numpy_rng(seed) -> Generator:
     return default_rng(seed)
 
+
 @fixture(name="angular_rng")
 def fixture_angular_rng(seed) -> UniformRandoms:
     return UniformRandoms(-5, 5, -5, 5, seed=seed)
@@ -63,7 +64,8 @@ def fixture_mock_rand(numpy_rng, angular_rng) -> DataFrame:
 def write_expect_wss(path: Path) -> Path:
     target = path / "wss_expect.txt"
     with open(target, "w") as f:
-        f.write("""# correlation function estimate with symmetric 68% percentile confidence
+        f.write(
+            """# correlation function estimate with symmetric 68% percentile confidence
 #    z_low     z_high         nz     nz_err
  0.0100000  0.1090000 -0.0004704  0.0028912
  0.1090000  0.2080000 -0.0102598  0.0093342
@@ -75,14 +77,16 @@ def write_expect_wss(path: Path) -> Path:
  0.7030000  0.8020000 -0.0098123  0.0141603
  0.8020000  0.9010000  0.0199227  0.0315443
  0.9010000  1.0000000 -0.0454084  0.0397360
-""")
+"""
+        )
     return target
 
 
 def write_expect_wsp(path: Path) -> Path:
     target = path / "wss_expect.txt"
     with open(target, "w") as f:
-        f.write("""# n(z) estimate with symmetric 68% percentile confidence
+        f.write(
+            """# n(z) estimate with symmetric 68% percentile confidence
 #    z_low     z_high         nz     nz_err
  0.0100000  0.1090000  0.0010139  0.0124166
  0.1090000  0.2080000  0.0232324  0.0208439
@@ -94,7 +98,8 @@ def write_expect_wsp(path: Path) -> Path:
  0.7030000  0.8020000 -0.0265981  0.0015099
  0.8020000  0.9010000  0.0496620  0.0772239
  0.9010000  1.0000000 -0.0059678  0.1281836
-""")
+"""
+        )
     return target
 
 
@@ -107,7 +112,9 @@ def assert_cols_match(path_a: Path, path_b: Path, *, ignore_cols: list[int]) -> 
         npt.assert_array_equal(col_a, col_b)
 
 
-def test_run(data_store, tmp_path, mock_data, mock_rand) -> None:  # pylint: disable=W0613
+def test_run(
+    data_store, tmp_path, mock_data, mock_rand  # pylint: disable=W0613
+) -> None:
     # data_store must be called at least once, which is done here implicitly
     cache_ref = YawCacheCreate.make_stage(
         name="cache_ref",

@@ -8,6 +8,7 @@ NOTE: The current implementation is a very basic method to transform the
 clustering redshift estimate into probability densities by clipping negative
 correlation amplitudes and setting them to zero.
 """
+
 from __future__ import annotations
 
 import pickle
@@ -46,7 +47,8 @@ yaw_config_resampling = {
     # resampling method: "method" (currently only "jackknife")
     # bootstrapping (not implemented in yet_another_wizz): "n_boot", "seed"
     # omitted: "global_norm"
-    p: create_param("resampling", p) for p in ("crosspatch",)
+    p: create_param("resampling", p)
+    for p in ("crosspatch",)
 }
 
 
@@ -108,6 +110,7 @@ class YawSummarize(ParsedRailStage):
     yaw_cc: YawRedshiftDataHandle
         A yet_another_wizz RedshiftData container containing all output data.
     """
+
     name = "YawEstimate"
 
     config_options = ParsedRailStage.config_options.copy()

@@ -5,6 +5,7 @@ and `yaw.crosscorrelate` functions. Additionally it defines a RAIL data handle
 for *yet_another_wizz* pair count data, which are intermediate data products
 from which the final correlation amplitudes are computed.
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -70,6 +71,7 @@ class YawAutoCorrelate(ParsedRailStage):
         The measured correlation function stored as pair counts per spatial
         patch and redshift bin.
     """
+
     name = "YawAutoCorrelate"
 
     config_options = ParsedRailStage.config_options.copy()
@@ -123,6 +125,7 @@ class YawCrossCorrelate(ParsedRailStage):
         The measured correlation function stored as pair counts per spatial
         patch and redshift bin.
     """
+
     name = "YawCrossCorrelate"
 
     config_options = ParsedRailStage.config_options.copy()

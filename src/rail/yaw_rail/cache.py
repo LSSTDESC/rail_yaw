@@ -8,6 +8,7 @@ data tables, and one to delete the cache directory and its contents. They are
 managed through a special data handle that allows passing the directory path
 between RAIL stages to define inputs for the correlation function stages.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,7 +30,6 @@ from rail.yaw_rail.utils import (
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-
     from yaw.catalogs.scipy import ScipyCatalog
     from yaw.core.coordinates import Coordinate, CoordSky
 
@@ -76,9 +76,7 @@ yaw_config_patches = dict(
 )
 
 config_cache_path = StageParameter(
-    str,
-    required=True,
-    msg="path to cache directory, must not exist"
+    str, required=True, msg="path to cache directory, must not exist"
 )
 
 
@@ -172,6 +170,7 @@ class YawCache:
     Additional methods exist to populte the cache or retrieve the cached data
     in the yet_another_wizz catalog format.
     """
+
     path: str
 
     def __init__(self, path: str) -> None:
@@ -369,6 +368,7 @@ class YawCacheCreate(ParsedRailStage):
     cache: YawCacheHandle
         Handle to the newly created cache directory.
     """
+
     name = "YawCacheCreate"
 
     config_options = ParsedRailStage.config_options.copy()
@@ -381,7 +381,9 @@ class YawCacheCreate(ParsedRailStage):
         ("cache", YawCacheHandle),
     ]
 
-    def create(self, data: TableHandle, rand: TableHandle | None = None) -> YawCacheHandle:
+    def create(
+        self, data: TableHandle, rand: TableHandle | None = None
+    ) -> YawCacheHandle:
         self.set_data("data", data)
         if rand is not None:
             self.set_data("rand", rand)
@@ -420,6 +422,7 @@ class YawCacheDrop(ParsedRailStage):
     """
     Delete an existing cache.
     """
+
     name = "YawCacheDrop"
 
     config_options = ParsedRailStage.config_options.copy()
