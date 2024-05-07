@@ -1,3 +1,9 @@
+"""
+This file implements a context wrapper that allows displaying *yet_another_wizz*
+logging messages on stderr, which is used in RAIL stages that call
+*yet_another_wizz* code.
+"""
+
 from __future__ import annotations
 
 import logging

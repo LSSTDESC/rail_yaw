@@ -29,9 +29,9 @@ handles:
   covariance estimation. The cache directory is created and destroyed with two
   dedicated stages.
 - A handle for yet_another_wizz pair count data (stored as HDF5 file), which are
-created as outputs of the cross- and autocorrelation stages.
+  created as outputs of the cross- and autocorrelation stages.
 - A handle for yet_another_wizz clustering redshift estimates (stored as python
-pickle), which is created by the final estimator stage.
+  pickle), which is created by the final estimator stage.
 
 The final stage does produce a qp ensemble as expected, but does so by setting
 all negative correlation amplitudes in all generated (spatial) samples to zero.
