@@ -19,7 +19,8 @@ dynamic = ["version"]
 dependencies = [
     "numpy",
     "h5py",
-    "qp",
+    "pz-rail-base",
+    "qp-prob",
     "yet_another_wizz",
 ]
 
