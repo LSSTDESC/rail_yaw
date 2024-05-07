@@ -23,8 +23,10 @@ from rail.core.data import DataHandle, TableHandle
 from rail.yaw_rail.logging import YawLogged
 from rail.yaw_rail.utils import (
     ParsedRailStage,
+    get_optional_handle,
     handle_has_path,
     railstage_add_params_and_docs,
+    set_optional_data,
     unpack_stageparam_dict,
 )
 
@@ -143,6 +145,7 @@ def cache_dataset(
             weight=weight_name,
             cache_directory=cache_directory,
         )
+
     else:
         if patch_centers is not None:
             patch_name = None
@@ -186,6 +189,7 @@ class YawCache:
         normalised = normalise_path(path)
         if os.path.exists(normalised):
             raise FileExistsError(normalised)
+
         os.makedirs(normalised)
         return cls(path)
 
@@ -322,9 +326,10 @@ class YawCache:
         if not os.path.exists(self.path):
             return
         self.reset()
-        # safety: if any other data is present, something is wrong and we
-        # don't want to delete the cache root directory and all its contents
+
         try:
+            # safety: if any other data is present, something is wrong and we
+            # don't want to delete the cache root directory and all its contents
             os.rmdir(self.path)
         except OSError as err:
             msg = "unaccounted cache directory contents, deletion failed"
@@ -385,8 +390,7 @@ class YawCacheCreate(ParsedRailStage):
         self, data: TableHandle, rand: TableHandle | None = None
     ) -> YawCacheHandle:
         self.set_data("data", data)
-        if rand is not None:
-            self.set_data("rand", rand)
+        set_optional_data(self, "rand", rand)
 
         self.run()
         return self.get_handle("cache")
@@ -400,14 +404,15 @@ class YawCacheCreate(ParsedRailStage):
                 patch_centers = None
 
             cache = YawCache.create(self.config_options["path"].value)
-            # start with randoms in case that patch centers are generated
-            rand: TableHandle = self.get_handle("rand")
-            cache.store_rand(
-                source=rand.path if handle_has_path(rand) else rand.read(),
-                patch_centers=patch_centers,
-                **unpack_stageparam_dict(self),
-            )
-            # patch centers will always be taken from randoms
+
+            rand: TableHandle | None = get_optional_handle(self, "rand")
+            if rand is not None:
+                cache.store_rand(
+                    source=rand.path if handle_has_path(rand) else rand.read(),
+                    patch_centers=patch_centers,
+                    **unpack_stageparam_dict(self),
+                )
+
             data: TableHandle = self.get_handle("data")
             cache.store_data(
                 source=data.path if handle_has_path(data) else data.read(),

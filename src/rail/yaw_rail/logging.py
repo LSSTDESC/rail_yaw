@@ -19,11 +19,13 @@ class OnlyYawFilter(logging.Filter):
 
 def init_logger(level: str = "info") -> logging.Logger:
     level = getattr(logging, level.upper())
+    formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+
     handler = logging.StreamHandler(sys.stdout)
-    format_str = "%(levelname)s:%(name)s:%(message)s"
-    handler.setFormatter(logging.Formatter(format_str))
+    handler.setFormatter(formatter)
     handler.setLevel(level)
     handler.addFilter(OnlyYawFilter())
+
     logging.basicConfig(level=level, handlers=[handler])
     return logging.getLogger()
 

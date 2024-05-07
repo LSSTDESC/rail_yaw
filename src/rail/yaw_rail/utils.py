@@ -66,6 +66,7 @@ class ParsedRailStage(ABC, RailStage):
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
+
         for name, param in self.config_options.items():
             if name in args:
                 param.set(args[name])
@@ -94,3 +95,22 @@ def unpack_stageparam_dict(stage: ParsedRailStage) -> dict[str, Any]:
         for key, param in stage.get_config_dict().items()
         if key in stage.stage_parameters
     }
+
+
+def get_optional_handle(stage: RailStage, tag: str, **kwarg) -> DataHandle | None:
+    try:
+        return stage.get_handle(tag, allow_missing=False, **kwarg)
+    except KeyError:
+        return None
+
+
+def get_optional_data(stage: RailStage, tag: str, **kwarg) -> Any | None:
+    try:
+        return stage.get_data(tag, allow_missing=False, **kwarg)
+    except KeyError:
+        return None
+
+
+def set_optional_data(stage: RailStage, tag: str, value: Any | None, **kwarg) -> None:
+    if value is not None:
+        stage.set_data(tag, value, **kwarg)
