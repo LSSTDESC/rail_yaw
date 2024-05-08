@@ -20,8 +20,8 @@ from yaw import NewCatalog
 
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, TableHandle
-from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
-from rail.yaw_rail.utils import YawRailStage
+from rail.yaw_rail.logging import yaw_logged
+from rail.yaw_rail.stage import YawRailStage
 
 if TYPE_CHECKING:
     from pandas import DataFrame
@@ -359,7 +359,6 @@ class YawCacheCreate(
     path=config_cache_path,
     **yaw_config_columns,
     **yaw_config_patches,
-    verbose=yaw_config_verbose,
 ):
     """
     Split a data and (optional) random data set into spatial patches and

@@ -21,8 +21,8 @@ from yaw import CorrFunc, RedshiftData, ResamplingConfig
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, QPHandle
 from rail.yaw_rail.correlation import YawCorrFuncHandle
-from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
-from rail.yaw_rail.utils import YawRailStage, create_param
+from rail.yaw_rail.logging import yaw_logged
+from rail.yaw_rail.stage import YawRailStage, create_param
 
 
 def _msg_fmt(name: str) -> str:
@@ -95,7 +95,6 @@ class YawSummarize(
     YawRailStage,
     **yaw_config_est,
     **yaw_config_resampling,
-    verbose=yaw_config_verbose,
 ):
     """
     Convert the clustering redshift estimate to an QP ensemble by clipping

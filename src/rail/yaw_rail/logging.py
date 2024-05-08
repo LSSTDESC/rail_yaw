@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from ceci.stage import StageParameter
 
 
-yaw_config_verbose = StageParameter(
+config_verbose = StageParameter(
     str,
     required=False,
     default="info",

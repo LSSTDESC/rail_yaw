@@ -16,8 +16,8 @@ from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
 
 from rail.core.data import DataHandle
 from rail.yaw_rail.cache import YawCacheHandle
-from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
-from rail.yaw_rail.utils import YawRailStage, create_param
+from rail.yaw_rail.logging import yaw_logged
+from rail.yaw_rail.stage import YawRailStage, create_param
 
 if TYPE_CHECKING:
     from rail.yaw_rail.cache import YawCache
@@ -77,7 +77,6 @@ class YawAutoCorrelate(
     **yaw_config_scales,
     **yaw_config_zbins,
     **yaw_config_backend,
-    verbose=yaw_config_verbose,
 ):
     """
     Measure the autocorrelation function amplitude for the give data sample.
@@ -123,7 +122,6 @@ class YawCrossCorrelate(
     **yaw_config_scales,
     **yaw_config_zbins,
     **yaw_config_backend,
-    verbose=yaw_config_verbose,
 ):
     """
     Measure the cross-correlation function amplitude for the give reference

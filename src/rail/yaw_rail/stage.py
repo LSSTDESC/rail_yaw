@@ -17,6 +17,7 @@ from yaw import config
 
 from ceci.config import StageParameter
 from rail.core.stage import RailStage
+from rail.yaw_rail.logging import config_verbose
 
 if TYPE_CHECKING:
     from rail.core.data import DataHandle
@@ -60,8 +61,9 @@ class YawRailStage(ABC, RailStage):
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+        cls.config_options = super().config_options.copy()
 
-        cls.config_options = RailStage.config_options.copy()
+        kwargs["verbose"] = config_verbose
         cls.config_options.update(kwargs)
         cls.stage_parameters = set(kwargs.keys())
 
