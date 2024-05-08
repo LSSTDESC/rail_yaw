@@ -22,11 +22,7 @@ from ceci.config import StageParameter
 from rail.core.data import DataHandle, QPHandle
 from rail.yaw_rail.correlation import YawCorrFuncHandle
 from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
-from rail.yaw_rail.utils import (
-    YawRailStage,
-    create_param,
-    add_params_and_docs,
-)
+from rail.yaw_rail.utils import YawRailStage, create_param
 
 
 def _msg_fmt(name: str) -> str:
@@ -95,12 +91,12 @@ class YawRedshiftDataHandle(DataHandle):
             pickle.dump(data, f)
 
 
-@add_params_and_docs(
+class YawSummarize(
+    YawRailStage,
     **yaw_config_est,
     **yaw_config_resampling,
     verbose=yaw_config_verbose,
-)
-class YawSummarize(YawRailStage):
+):
     """
     Convert the clustering redshift estimate to an QP ensemble by clipping
     negative values and substituting non-finite values.

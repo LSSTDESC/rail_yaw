@@ -17,11 +17,7 @@ from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
 from rail.core.data import DataHandle
 from rail.yaw_rail.cache import YawCacheHandle
 from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
-from rail.yaw_rail.utils import (
-    YawRailStage,
-    create_param,
-    add_params_and_docs,
-)
+from rail.yaw_rail.utils import YawRailStage, create_param
 
 if TYPE_CHECKING:
     from rail.yaw_rail.cache import YawCache
@@ -60,7 +56,9 @@ class YawBaseCorrelate(YawRailStage):
     config_options = YawRailStage.config_options.copy()
 
     inputs: list[tuple[str, YawCacheHandle]]
-    outputs = [("corrfunc", YawCorrFuncHandle)]
+    outputs = [
+        ("corrfunc", YawCorrFuncHandle),
+    ]
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
@@ -77,13 +75,13 @@ class YawBaseCorrelate(YawRailStage):
         pass
 
 
-@add_params_and_docs(
+class YawAutoCorrelate(
+    YawBaseCorrelate,
     **yaw_config_scales,
     **yaw_config_zbins,
     **yaw_config_backend,
     verbose=yaw_config_verbose,
-)
-class YawAutoCorrelate(YawBaseCorrelate):
+):
     """
     Measure the autocorrelation function amplitude for the give data sample.
 
@@ -97,7 +95,9 @@ class YawAutoCorrelate(YawBaseCorrelate):
     """
 
     name = "YawAutoCorrelate"
-    inputs = [("sample", YawCacheHandle)]
+    inputs = [
+        ("sample", YawCacheHandle),
+    ]
 
     def correlate(self, sample: YawCache) -> YawCorrFuncHandle:  # pylint: disable=W0221
         self.set_data("sample", sample)
@@ -121,13 +121,13 @@ class YawAutoCorrelate(YawBaseCorrelate):
         self.add_data("corrfunc", corr)
 
 
-@add_params_and_docs(
+class YawCrossCorrelate(
+    YawBaseCorrelate,
     **yaw_config_scales,
     **yaw_config_zbins,
     **yaw_config_backend,
     verbose=yaw_config_verbose,
-)
-class YawCrossCorrelate(YawBaseCorrelate):
+):
     """
     Measure the cross-correlation function amplitude for the give reference
     and unknown sample.
@@ -142,7 +142,10 @@ class YawCrossCorrelate(YawBaseCorrelate):
     """
 
     name = "YawCrossCorrelate"
-    inputs = [("reference", YawCacheHandle), ("unknown", YawCacheHandle)]
+    inputs = [
+        ("reference", YawCacheHandle),
+        ("unknown", YawCacheHandle),
+    ]
 
     def correlate(  # pylint: disable=W0221
         self, reference: YawCache, unknown: YawCache

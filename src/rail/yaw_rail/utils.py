@@ -11,7 +11,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Container
 from dataclasses import fields
-from typing import TYPE_CHECKING, Any, Literal, Type
+from typing import TYPE_CHECKING, Any, Literal
 
 from yaw import config
 
@@ -63,6 +63,19 @@ def create_param(
 class YawRailStage(ABC, RailStage):
     stage_parameters: set[str]
 
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        cls.config_options.update(kwargs)
+        cls.stage_parameters = set(kwargs.keys())
+
+        param_str = "Parameters\n    ----------\n"
+        for name, param in kwargs.items():
+            msg = param._help  # pylint: disable=W0212; PR filed in ceci
+            param_str += f"    {name}: {param.dtype.__name__} \n"
+            param_str += f"        {msg}\n"
+        cls.__doc__ = cls.__doc__.replace("@Parameters", param_str)
+
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
 
@@ -94,20 +107,3 @@ class YawRailStage(ABC, RailStage):
     def set_optional_data(self, tag: str, value: Any | None, **kwarg) -> None:
         if value is not None:
             self.set_data(tag, value, **kwarg)
-
-
-def add_params_and_docs(**kwargs: StageParameter):
-    def decorator(cls: Type[YawRailStage]):
-        cls.config_options.update(kwargs)
-        cls.stage_parameters = set(kwargs.keys())
-
-        param_str = "Parameters\n    ----------\n"
-        for name, param in kwargs.items():
-            msg = param._help  # pylint: disable=W0212; PR filed in ceci
-            param_str += f"    {name}: {param.dtype.__name__} \n"
-            param_str += f"        {msg}\n"
-        cls.__doc__ = cls.__doc__.replace("@Parameters", param_str)
-
-        return cls
-
-    return decorator

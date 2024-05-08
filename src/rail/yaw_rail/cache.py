@@ -21,11 +21,7 @@ from yaw import NewCatalog
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, TableHandle
 from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
-from rail.yaw_rail.utils import (
-    YawRailStage,
-    handle_has_path,
-    add_params_and_docs,
-)
+from rail.yaw_rail.utils import YawRailStage, handle_has_path
 
 if TYPE_CHECKING:
     from pandas import DataFrame
@@ -353,13 +349,13 @@ class YawCacheHandle(DataHandle):
             json.dump(inst_args, f)
 
 
-@add_params_and_docs(
+class YawCacheCreate(
+    YawRailStage,
     path=config_cache_path,
     **yaw_config_columns,
     **yaw_config_patches,
     verbose=yaw_config_verbose,
-)
-class YawCacheCreate(YawRailStage):
+):
     """
     Split a data and (optional) random data set into spatial patches and
     cache them on disk.
