@@ -8,6 +8,7 @@ NOTE: The current implementation is a very basic method to transform the
 clustering redshift estimate into probability densities by clipping negative
 correlation amplitudes and setting them to zero.
 """
+
 from __future__ import annotations
 
 import pickle
@@ -20,15 +21,16 @@ from yaw import CorrFunc, RedshiftData, ResamplingConfig
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, QPHandle
 from rail.yaw_rail.correlation import YawCorrFuncHandle
-from rail.yaw_rail.logging import YawLogged
-from rail.yaw_rail.utils import (
-    ParsedRailStage,
-    create_param,
-    railstage_add_params_and_docs,
-)
+from rail.yaw_rail.logging import yaw_logged
+from rail.yaw_rail.stage import YawRailStage, create_param
+
+__all__ = [
+    "YawRedshiftDataHandle",
+    "YawSummarize",
+]
 
 
-def _msg_fmt(name: str) -> str:
+def msg_fmt(name: str) -> str:
     return f"Correlation estimator to use for {name}"
 
 
@@ -39,20 +41,22 @@ key_to_cf_name = dict(
 )
 
 yaw_config_est = {
-    f"{key}_est": StageParameter(dtype=str, required=False, msg=_msg_fmt(name))
+    f"{key}_est": StageParameter(dtype=str, required=False, msg=msg_fmt(name))
     for key, name in key_to_cf_name.items()
 }
 yaw_config_resampling = {
     # resampling method: "method" (currently only "jackknife")
     # bootstrapping (not implemented in yet_another_wizz): "n_boot", "seed"
     # omitted: "global_norm"
-    p: create_param("resampling", p) for p in ("crosspatch",)
+    p: create_param("resampling", p)
+    for p in ("crosspatch",)
 }
 
 
 def clip_negative_values(nz: RedshiftData) -> RedshiftData:
     data = np.nan_to_num(nz.data, nan=0.0, posinf=0.0, neginf=0.0)
     samples = np.nan_to_num(nz.samples, nan=0.0, posinf=0.0, neginf=0.0)
+
     return RedshiftData(
         binning=nz.get_binning(),
         data=np.maximum(data, 0.0),
@@ -63,10 +67,12 @@ def clip_negative_values(nz: RedshiftData) -> RedshiftData:
 
 
 def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
-    samples = nz.samples.copy()
     nz_mids = nz.mids
+
+    samples = nz.samples.copy()
     for i, sample in enumerate(samples):
         samples[i] = sample / np.trapz(sample, x=nz_mids)
+
     return qp.Ensemble(qp.hist, data=dict(bins=nz.edges, pdfs=samples))
 
 
@@ -90,16 +96,16 @@ class YawRedshiftDataHandle(DataHandle):
             pickle.dump(data, f)
 
 
-@railstage_add_params_and_docs(
+class YawSummarize(
+    YawRailStage,
     **yaw_config_est,
     **yaw_config_resampling,
-)
-class YawSummarize(ParsedRailStage):
+):
     """
     Convert the clustering redshift estimate to an QP ensemble by clipping
     negative values and substituting non-finite values.
 
-    @Parameters
+    @YawParameters
 
     Returns
     -------
@@ -108,9 +114,6 @@ class YawSummarize(ParsedRailStage):
     yaw_cc: YawRedshiftDataHandle
         A yet_another_wizz RedshiftData container containing all output data.
     """
-    name = "YawEstimate"
-
-    config_options = ParsedRailStage.config_options.copy()
 
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
@@ -134,25 +137,17 @@ class YawSummarize(ParsedRailStage):
         unk_corr: CorrFunc | None = None,
     ) -> dict:
         self.set_data("cross_corr", cross_corr)
-        if ref_corr is not None:
-            self.set_data("ref_corr", ref_corr)
-        if unk_corr is not None:
-            self.set_data("unk_corr", unk_corr)
+        self.set_optional_data("ref_corr", ref_corr)
+        self.set_optional_data("unk_corr", unk_corr)
 
         self.run()
         return {name: self.get_handle(name) for name, _ in self.outputs}
 
     def run(self) -> None:
-        with YawLogged():
-            cross_corr = self.get_data("cross_corr")
-            try:
-                ref_corr = self.get_data("ref_corr", allow_missing=False)
-            except KeyError:
-                ref_corr = None
-            try:
-                unk_corr = self.get_data("unk_corr", allow_missing=False)
-            except KeyError:
-                unk_corr = None
+        with yaw_logged(self.config_options["verbose"].value):
+            cross_corr: CorrFunc = self.get_data("cross_corr")
+            ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
+            unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
             kwargs = {key: self.config_options[key].value for key in yaw_config_est}
 
             nz_cc = RedshiftData.from_corrfuncs(

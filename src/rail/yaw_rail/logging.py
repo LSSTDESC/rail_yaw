@@ -1,7 +1,28 @@
+"""
+This file implements a context wrapper that allows displaying *yet_another_wizz*
+logging messages on stderr, which is used in RAIL stages that call
+*yet_another_wizz* code.
+"""
+
 from __future__ import annotations
 
 import logging
 import sys
+from contextlib import contextmanager
+
+from ceci.stage import StageParameter
+
+__all__ = [
+    "yaw_logged",
+]
+
+
+config_verbose = StageParameter(
+    str,
+    required=False,
+    default="info",
+    msg="lowest log level emitted by *yet_another_wizz*",
+)
 
 
 class OnlyYawFilter(logging.Filter):
@@ -13,23 +34,23 @@ class OnlyYawFilter(logging.Filter):
 
 def init_logger(level: str = "info") -> logging.Logger:
     level = getattr(logging, level.upper())
+    formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+
     handler = logging.StreamHandler(sys.stdout)
-    format_str = "%(levelname)s:%(name)s:%(message)s"
-    handler.setFormatter(logging.Formatter(format_str))
+    handler.setFormatter(formatter)
     handler.setLevel(level)
     handler.addFilter(OnlyYawFilter())
+
     logging.basicConfig(level=level, handlers=[handler])
     return logging.getLogger()
 
 
-class YawLogged:
-    def __init__(self, level: str = "debug") -> None:
-        self.logger = init_logger(level=level)
-
-    def __enter__(self) -> YawLogged:
-        return self
-
-    def __exit__(self, *args, **kwargs) -> None:
-        for handler in self.logger.handlers[:]:
+@contextmanager
+def yaw_logged(level: str = "debug"):
+    logger = init_logger(level=level)
+    try:
+        yield logger
+    finally:
+        for handler in logger.handlers[:]:
             handler.close()
-            self.logger.removeHandler(handler)
+            logger.removeHandler(handler)

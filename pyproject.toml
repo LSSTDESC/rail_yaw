@@ -31,6 +31,8 @@ dev = [
     "pytest-cov", # Used to report total code coverage
     "pre-commit", # Used to run checks before finalizing a git commit
     "pylint", # Used for static linting of files
+    "black", # code style
+    "nbconvert", # for pre-commit tasks
 ]
 
 [build-system]
@@ -73,3 +75,19 @@ max-line-length = 110
 max-locals = 50
 max-branches = 25
 max-public-methods = 50
+
+[tool.black]
+include = ".pyi?$"
+exclude = """
+/(
+    .git
+    | .hg
+    | .mypy_cache
+    | .tox
+    | .venv
+    | _build
+    | buck-out
+    | build
+    | dist
+)/
+"""
