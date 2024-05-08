@@ -32,6 +32,7 @@ dev = [
     "pre-commit", # Used to run checks before finalizing a git commit
     "pylint", # Used for static linting of files
     "black", # code style
+    "nbconvert", # for pre-commit tasks
 ]
 
 [build-system]
