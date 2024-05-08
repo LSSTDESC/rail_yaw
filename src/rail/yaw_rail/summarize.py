@@ -24,8 +24,13 @@ from rail.yaw_rail.correlation import YawCorrFuncHandle
 from rail.yaw_rail.logging import yaw_logged
 from rail.yaw_rail.stage import YawRailStage, create_param
 
+__all__ = [
+    "YawRedshiftDataHandle",
+    "YawSummarize",
+]
 
-def _msg_fmt(name: str) -> str:
+
+def msg_fmt(name: str) -> str:
     return f"Correlation estimator to use for {name}"
 
 
@@ -36,7 +41,7 @@ key_to_cf_name = dict(
 )
 
 yaw_config_est = {
-    f"{key}_est": StageParameter(dtype=str, required=False, msg=_msg_fmt(name))
+    f"{key}_est": StageParameter(dtype=str, required=False, msg=msg_fmt(name))
     for key, name in key_to_cf_name.items()
 }
 yaw_config_resampling = {

@@ -23,12 +23,19 @@ from rail.yaw_rail.stage import YawRailStage, create_param
 if TYPE_CHECKING:
     from rail.yaw_rail.cache import YawCache
 
+__all__ = [
+    "YawAutoCorrelate",
+    "YawCorrFuncHandle",
+    "YawCrossCorrelate",
+]
+
 
 yaw_config_scales = {
     p: create_param("scales", p) for p in ("rmin", "rmax", "rweight", "rbin_num")
 }
 yaw_config_zbins = {
-    p: create_param("binning", p) for p in ("zmin", "zmax", "zbin_num", "method")
+    p: create_param("binning", p)
+    for p in ("zmin", "zmax", "zbin_num", "method", "zbins")
 }
 yaw_config_backend = {
     p: create_param("backend", p) for p in ("crosspatch", "thread_num")
@@ -53,6 +60,7 @@ class YawCorrFuncHandle(DataHandle):
 
 class YawBaseCorrelate(YawRailStage):
     """Base class for correlation measurement stages"""
+
     inputs: list[tuple[str, YawCacheHandle]]
     outputs = [
         ("corrfunc", YawCorrFuncHandle),

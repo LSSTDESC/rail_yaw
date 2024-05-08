@@ -12,6 +12,10 @@ from contextlib import contextmanager
 
 from ceci.stage import StageParameter
 
+__all__ = [
+    "yaw_logged",
+]
+
 
 config_verbose = StageParameter(
     str,

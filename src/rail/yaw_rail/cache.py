@@ -28,6 +28,13 @@ if TYPE_CHECKING:
     from yaw.catalogs.scipy import ScipyCatalog
     from yaw.core.coordinates import Coordinate, CoordSky
 
+__all__ = [
+    "YawCache",
+    "YawCacheCreate",
+    "YawCacheDrop",
+    "YawCacheHandle",
+]
+
 
 yaw_config_columns = dict(
     ra_name=StageParameter(
