@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from pandas import read_parquet
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from pandas import DataFrame
 
 __all__ = [
@@ -31,6 +31,6 @@ def get_dc2_test_data() -> DataFrame:
                 timeout=10,
             )
             data = read_parquet(path)
-        except Exception as err:
+        except Exception as err:  # pragma: no cover
             raise OSError("downloading test data failed") from err
     return data
