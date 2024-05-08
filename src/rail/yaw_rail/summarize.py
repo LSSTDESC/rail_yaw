@@ -110,7 +110,6 @@ class YawSummarize(
         A yet_another_wizz RedshiftData container containing all output data.
     """
 
-    name = "YawEstimate"
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
         ("ref_corr", YawCorrFuncHandle),

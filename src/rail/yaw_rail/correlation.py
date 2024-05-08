@@ -90,7 +90,6 @@ class YawAutoCorrelate(
         patch and redshift bin.
     """
 
-    name = "YawAutoCorrelate"
     inputs = [
         ("sample", YawCacheHandle),
     ]
@@ -136,7 +135,6 @@ class YawCrossCorrelate(
         patch and redshift bin.
     """
 
-    name = "YawCrossCorrelate"
     inputs = [
         ("reference", YawCacheHandle),
         ("unknown", YawCacheHandle),

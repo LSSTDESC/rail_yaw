@@ -372,7 +372,6 @@ class YawCacheCreate(
         Handle to the newly created cache directory.
     """
 
-    name = "YawCacheCreate"
     inputs = [
         ("data", TableHandle),
         ("rand", TableHandle),
@@ -423,7 +422,6 @@ class YawCacheDrop(YawRailStage):
     Delete an existing cache.
     """
 
-    name = "YawCacheDrop"
     inputs = [
         ("cache", YawCacheHandle),
     ]

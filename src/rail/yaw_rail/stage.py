@@ -61,6 +61,8 @@ class YawRailStage(ABC, RailStage):
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+
+        cls.name = cls.__name__
         cls.config_options = super().config_options.copy()
 
         kwargs["verbose"] = config_verbose
