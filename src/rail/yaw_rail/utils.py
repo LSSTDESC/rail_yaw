@@ -22,11 +22,6 @@ if TYPE_CHECKING:
     from rail.core.data import DataHandle
 
 
-def handle_has_path(handle: DataHandle) -> bool:
-    """This is a workaround for a potential bug in RAIL."""
-    return handle.path is not None and handle.path != "None"
-
-
 def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
     """Convert parameter metadata, embedded into the yet_another_wizz
     configuration dataclasses, to a python dictionary."""
@@ -66,6 +61,7 @@ class YawRailStage(ABC, RailStage):
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
+        cls.config_options = RailStage.config_options.copy()
         cls.config_options.update(kwargs)
         cls.stage_parameters = set(kwargs.keys())
 
@@ -74,7 +70,7 @@ class YawRailStage(ABC, RailStage):
             msg = param._help  # pylint: disable=W0212; PR filed in ceci
             param_str += f"    {name}: {param.dtype.__name__} \n"
             param_str += f"        {msg}\n"
-        cls.__doc__ = cls.__doc__.replace("@Parameters", param_str)
+        cls.__doc__ = cls.__doc__.replace("@YawParameters", param_str)
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)

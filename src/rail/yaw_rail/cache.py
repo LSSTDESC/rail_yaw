@@ -21,7 +21,7 @@ from yaw import NewCatalog
 from ceci.config import StageParameter
 from rail.core.data import DataHandle, TableHandle
 from rail.yaw_rail.logging import yaw_config_verbose, yaw_logged
-from rail.yaw_rail.utils import YawRailStage, handle_has_path
+from rail.yaw_rail.utils import YawRailStage
 
 if TYPE_CHECKING:
     from pandas import DataFrame
@@ -349,6 +349,11 @@ class YawCacheHandle(DataHandle):
             json.dump(inst_args, f)
 
 
+def handle_has_path(handle: DataHandle) -> bool:
+    """This is a workaround for a potential bug in RAIL."""
+    return handle.path is not None and handle.path != "None"
+
+
 class YawCacheCreate(
     YawRailStage,
     path=config_cache_path,
@@ -360,7 +365,7 @@ class YawCacheCreate(
     Split a data and (optional) random data set into spatial patches and
     cache them on disk.
 
-    @Parameters
+    @YawParameters
 
     Returns
     -------
@@ -369,9 +374,6 @@ class YawCacheCreate(
     """
 
     name = "YawCacheCreate"
-
-    config_options = YawRailStage.config_options.copy()
-
     inputs = [
         ("data", TableHandle),
         ("rand", TableHandle),
@@ -423,9 +425,6 @@ class YawCacheDrop(YawRailStage):
     """
 
     name = "YawCacheDrop"
-
-    config_options = YawRailStage.config_options.copy()
-
     inputs = [
         ("cache", YawCacheHandle),
     ]

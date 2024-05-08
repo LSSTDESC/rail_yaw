@@ -101,7 +101,7 @@ class YawSummarize(
     Convert the clustering redshift estimate to an QP ensemble by clipping
     negative values and substituting non-finite values.
 
-    @Parameters
+    @YawParameters
 
     Returns
     -------
@@ -112,9 +112,6 @@ class YawSummarize(
     """
 
     name = "YawEstimate"
-
-    config_options = YawRailStage.config_options.copy()
-
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
         ("ref_corr", YawCorrFuncHandle),

@@ -52,9 +52,6 @@ class YawCorrFuncHandle(DataHandle):
 
 class YawBaseCorrelate(YawRailStage):
     name = "YawBaseCorrelate"
-
-    config_options = YawRailStage.config_options.copy()
-
     inputs: list[tuple[str, YawCacheHandle]]
     outputs = [
         ("corrfunc", YawCorrFuncHandle),
@@ -85,7 +82,7 @@ class YawAutoCorrelate(
     """
     Measure the autocorrelation function amplitude for the give data sample.
 
-    @Parameters
+    @YawParameters
 
     Returns
     -------
@@ -132,7 +129,7 @@ class YawCrossCorrelate(
     Measure the cross-correlation function amplitude for the give reference
     and unknown sample.
 
-    @Parameters
+    @YawParameters
 
     Returns
     -------
