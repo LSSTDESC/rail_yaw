@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
-from pandas import DataFrame, read_parquet
 from pytest import fixture
 from yaw import UniformRandoms
 
 from rail.core.stage import RailStage
-from rail import yaw_rail
+from rail.yaw_rail.utils import get_dc2_test_data
 
 if TYPE_CHECKING:
+    from pandas import DataFrame
     from rail.core.data import DataStore
 
 
@@ -28,9 +27,7 @@ def fixture_seed() -> int:
 
 @fixture(name="mock_data", scope="session")
 def fixture_mock_data(seed) -> DataFrame:
-    repo_root, _ = yaw_rail.__file__.rsplit("/src", 1)
-    path = os.path.join(repo_root, "examples", "example_data.pqt")
-    return read_parquet(path).sample(20000, random_state=seed)
+    return get_dc2_test_data().sample(20000, random_state=seed)
 
 
 @fixture(name="zlim", scope="session")
