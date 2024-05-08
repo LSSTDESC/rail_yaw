@@ -8,6 +8,7 @@ from which the final correlation amplitudes are computed.
 
 from __future__ import annotations
 
+import warnings
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
@@ -51,7 +52,7 @@ class YawCorrFuncHandle(DataHandle):
 
 
 class YawBaseCorrelate(YawRailStage):
-    name = "YawBaseCorrelate"
+    """Base class for correlation measurement stages"""
     inputs: list[tuple[str, YawCacheHandle]]
     outputs = [
         ("corrfunc", YawCorrFuncHandle),
@@ -106,12 +107,14 @@ class YawAutoCorrelate(
             data = cache_sample.get_data()
             rand = cache_sample.get_rand()
 
-            corr = autocorrelate(
-                config=self.yaw_config,
-                data=data,
-                random=rand,
-                compute_rr=True,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter(action="ignore", category=FutureWarning)
+                corr = autocorrelate(
+                    config=self.yaw_config,
+                    data=data,
+                    random=rand,
+                    compute_rr=True,
+                )
 
         self.add_data("corrfunc", corr)
 
@@ -162,12 +165,14 @@ class YawCrossCorrelate(
             except FileNotFoundError:
                 rand_unk = None
 
-            corr = crosscorrelate(
-                config=self.yaw_config,
-                reference=data_ref,
-                unknown=data_unk,
-                ref_rand=rand_ref,
-                unk_rand=rand_unk,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter(action="ignore", category=FutureWarning)
+                corr = crosscorrelate(
+                    config=self.yaw_config,
+                    reference=data_ref,
+                    unknown=data_unk,
+                    ref_rand=rand_ref,
+                    unk_rand=rand_unk,
+                )
 
         self.add_data("corrfunc", corr)
