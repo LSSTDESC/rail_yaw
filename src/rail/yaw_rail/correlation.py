@@ -112,8 +112,8 @@ class YawAutoCorrelate(
     def run(self) -> None:
         with yaw_logged(self.config_options["verbose"].value):
             cache_sample: YawCache = self.get_data("sample")
-            data = cache_sample.get_data()
-            rand = cache_sample.get_rand()
+            data = cache_sample.data.get()
+            rand = cache_sample.rand.get()
 
             with warnings.catch_warnings():
                 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -163,13 +163,13 @@ class YawCrossCorrelate(
     def run(self) -> None:
         with yaw_logged(self.config_options["verbose"].value):
             cache_ref: YawCache = self.get_data("reference")
-            data_ref = cache_ref.get_data()
-            rand_ref = cache_ref.get_rand()
+            data_ref = cache_ref.data.get()
+            rand_ref = cache_ref.rand.get()
 
             cache_unk: YawCache = self.get_data("unknown")
-            data_unk = cache_unk.get_data()
+            data_unk = cache_unk.data.get()
             try:
-                rand_unk = cache_unk.get_rand()
+                rand_unk = cache_unk.rand.get()
             except FileNotFoundError:
                 rand_unk = None
 

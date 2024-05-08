@@ -77,8 +77,10 @@ yaw_config_patches = dict(
     ),
 )
 
-config_cache_path = StageParameter(
-    str, required=True, msg="path to cache directory, must not exist"
+config_cache = dict(
+    path=StageParameter(
+        str, required=True, msg="path to cache directory, must not exist"
+    ),
 )
 
 
@@ -106,61 +108,93 @@ def get_patch_method(patch_centers, patch_name, n_patches) -> Any:
     raise ValueError("no patch creation method specified")
 
 
-def cache_dataset(
-    cache_directory: str,
-    overwrite: bool = False,
-    *,
-    source: DataFrame | str,
-    ra_name: str,
-    dec_name: str,
-    patch_name: str | None = None,
-    patch_centers: ScipyCatalog | Coordinate | None = None,
-    n_patches: int | None = None,
-    redshift_name: str | None = None,
-    weight_name: str | None = None,
-) -> None:
-    """Split a data set, specified through a file path, into spatial patches and
-    cache it in the specified directory. The directory created automatically,
-    additional parameters define the relevant column names and patch creation
-    method."""
-    if os.path.exists(cache_directory):
-        if overwrite:
-            shutil.rmtree(cache_directory)
+class YawCatalog:
+    """
+    Wrapper around a *yet_another_wizz* catalog.
+    """
+
+    path: str
+    catalog: ScipyCatalog | None
+
+    def __init__(self, path: str) -> None:
+        self.path = normalise_path(path)
+        self.catalog = None
+        self._patch_center_callback = None
+
+    def set_patch_center_callback(self, cat: YawCatalog) -> None:
+        self._patch_center_callback = lambda: cat.get().centers
+
+    def exists(self) -> bool:
+        return os.path.exists(self.path)
+
+    def get(self) -> ScipyCatalog:
+        if not self.exists():
+            raise FileNotFoundError(f"no catalog cached at {self.path}")
+        self.catalog = NewCatalog().from_cache(self.path)
+        return self.catalog
+
+    def set(
+        self,
+        source: DataFrame | str,
+        ra_name: str,
+        dec_name: str,
+        *,
+        patch_name: str | None = None,
+        patch_centers: ScipyCatalog | Coordinate | None = None,
+        n_patches: int | None = None,
+        redshift_name: str | None = None,
+        weight_name: str | None = None,
+        overwrite: bool = False,
+        **kwargs,  # pylint: disable=W0613; allows dict-unpacking of whole config
+    ) -> ScipyCatalog:
+        if self.exists():
+            if overwrite:
+                shutil.rmtree(self.path)
+            else:
+                raise FileExistsError(self.path)
+        os.makedirs(self.path)
+
+        try:
+            patch_centers = self._patch_center_callback()
+        except (TypeError, FileNotFoundError):
+            pass
+
+        if isinstance(source, str):
+            patches = get_patch_method(
+                patch_centers=patch_centers,
+                patch_name=patch_name,
+                n_patches=n_patches,
+            )
+            self.catalog = NewCatalog().from_file(
+                filepath=source,
+                patches=patches,
+                ra=ra_name,
+                dec=dec_name,
+                redshift=redshift_name,
+                weight=weight_name,
+                cache_directory=self.path,
+            )
+
         else:
-            raise FileExistsError(cache_directory)
-    os.makedirs(cache_directory)
+            if patch_centers is not None:
+                patch_name = None
+                n_patches = None
+            self.catalog = NewCatalog().from_dataframe(
+                data=source,
+                ra_name=ra_name,
+                dec_name=dec_name,
+                patch_centers=patch_centers,
+                patch_name=patch_name,
+                n_patches=n_patches,
+                redshift_name=redshift_name,
+                weight_name=weight_name,
+                cache_directory=self.path,
+            )
 
-    if isinstance(source, str):
-        patches = get_patch_method(
-            patch_centers=patch_centers,
-            patch_name=patch_name,
-            n_patches=n_patches,
-        )
-        NewCatalog().from_file(
-            filepath=source,
-            patches=patches,
-            ra=ra_name,
-            dec=dec_name,
-            redshift=redshift_name,
-            weight=weight_name,
-            cache_directory=cache_directory,
-        )
-
-    else:
-        if patch_centers is not None:
-            patch_name = None
-            n_patches = None
-        NewCatalog().from_dataframe(
-            data=source,
-            ra_name=ra_name,
-            dec_name=dec_name,
-            patch_centers=patch_centers,
-            patch_name=patch_name,
-            n_patches=n_patches,
-            redshift_name=redshift_name,
-            weight_name=weight_name,
-            cache_directory=cache_directory,
-        )
+    def drop(self) -> None:
+        if self.exists():
+            shutil.rmtree(self.path)
+        self.catalog = None
 
 
 class YawCache:
@@ -175,6 +209,8 @@ class YawCache:
     """
 
     path: str
+    data: YawCatalog
+    rand: YawCatalog
 
     def __init__(self, path: str) -> None:
         """Open an existing cache directory at the specified path."""
@@ -182,6 +218,11 @@ class YawCache:
         if not os.path.exists(normalised):
             raise FileNotFoundError(normalised)
         self.path = normalised
+
+        self.data = YawCatalog(os.path.join(self.path, "data"))
+        self.rand = YawCatalog(os.path.join(self.path, "rand"))
+        self.data.set_patch_center_callback(self.rand)
+        self.rand.set_patch_center_callback(self.data)
 
     @classmethod
     def create(cls, path: str) -> YawCache:
@@ -196,136 +237,24 @@ class YawCache:
     def __str__(self) -> str:
         return f"{self.__class__.__name__} @ {self.path}"
 
-    @property
-    def path_data(self) -> str:
-        """Get the path at which the data sample is stored."""
-        return os.path.join(self.path, "data")
-
-    def has_data(self) -> bool:
-        """Check if the data sample exists."""
-        return os.path.exists(self.path_data)
-
-    def get_data(self) -> ScipyCatalog:
-        """Load the data sample as yet_another_wizz catalog."""
-        if not self.has_data():
-            raise FileNotFoundError("cache contains no data")
-        return NewCatalog().from_cache(self.path_data)
-
-    def store_data(
-        self,
-        source: DataFrame | str,
-        ra_name: str,
-        dec_name: str,
-        *,
-        patch_name: str | None = None,
-        patch_centers: ScipyCatalog | Coordinate | None = None,
-        n_patches: int | None = None,
-        redshift_name: str | None = None,
-        weight_name: str | None = None,
-        overwrite: bool = False,
-        **kwargs,  # pylint: disable=W0613; allows dict-unpacking of whole config
-    ) -> None:
-        """
-        Split a data set, specified through a file path, into spatial patches
-        and cache it. The additional parameters define the relevant column names
-        and patch creation method. If the cache already contains randoms, it is
-        used to define the patch centers.
-        """
-        try:
-            # if randoms are cached, use their centers for internal consistency
-            patch_centers = self.get_rand().centers
-        except FileNotFoundError:
-            pass
-        cache_dataset(
-            self.path_data,
-            overwrite,
-            source=source,
-            ra_name=ra_name,
-            dec_name=dec_name,
-            patch_name=patch_name,
-            patch_centers=patch_centers,
-            n_patches=n_patches,
-            redshift_name=redshift_name,
-            weight_name=weight_name,
-        )
-
-    @property
-    def path_rand(self) -> str:
-        """Get the path at which the randoms are stored."""
-        return os.path.join(self.path, "rand")
-
-    def has_rand(self) -> bool:
-        """Check if the randoms exist."""
-        return os.path.exists(self.path_rand)
-
-    def get_rand(self) -> ScipyCatalog:
-        """Load the randoms as yet_another_wizz catalog."""
-        if not self.has_rand():
-            raise FileNotFoundError("cache contains no randoms")
-        return NewCatalog().from_cache(self.path_rand)
-
-    def store_rand(
-        self,
-        source: DataFrame | str,
-        ra_name: str,
-        dec_name: str,
-        *,
-        patch_name: str | None = None,
-        patch_centers: ScipyCatalog | Coordinate | None = None,
-        n_patches: int | None = None,
-        redshift_name: str | None = None,
-        weight_name: str | None = None,
-        overwrite: bool = False,
-        **kwargs,  # pylint: disable=W0613; allows dict-unpacking of whole config
-    ) -> None:
-        """
-        Split a data set, specified through a file path, into spatial patches
-        and cache it. The additional parameters define the relevant column names
-        and patch creation method. If the cache already contains a data set, it
-        is used to define the patch centers.
-        """
-        try:
-            # if a data set is cached, use its centers for internal consistency
-            patch_centers = self.get_data().centers
-        except FileNotFoundError:
-            pass
-        cache_dataset(
-            self.path_rand,
-            overwrite,
-            source=source,
-            ra_name=ra_name,
-            dec_name=dec_name,
-            patch_name=patch_name,
-            patch_centers=patch_centers,
-            n_patches=n_patches,
-            redshift_name=redshift_name,
-            weight_name=weight_name,
-        )
-
     def get_patch_centers(self) -> CoordSky:
         """Get the patch centers for a non-empty cache."""
-        if self.has_rand():
-            return self.get_rand().centers
-        if self.has_data():
-            return self.get_data().centers
+        if self.rand.exists():
+            return self.rand.get().centers
+        if self.data.exists():
+            return self.data.get().centers
         raise FileNotFoundError("cache is empty")
 
     def n_patches(self) -> int:
         """Get the number of spatial patches for a non-empty cache."""
         return len(self.get_patch_centers())
 
-    def reset(self) -> None:
-        """Delete all cached data."""
-        if self.has_data():
-            shutil.rmtree(self.path_data)
-        if self.has_rand():
-            shutil.rmtree(self.path_rand)
-
     def drop(self) -> None:
         """Delete the entire cache directy. Invalidates this instance."""
         if not os.path.exists(self.path):
             return
-        self.reset()
+        self.data.drop()
+        self.rand.drop()
 
         try:
             # safety: if any other data is present, something is wrong and we
@@ -363,7 +292,7 @@ def handle_has_path(handle: DataHandle) -> bool:
 
 class YawCacheCreate(
     YawRailStage,
-    path=config_cache_path,
+    **config_cache,
     **yaw_config_columns,
     **yaw_config_patches,
 ):
@@ -408,14 +337,14 @@ class YawCacheCreate(
 
             rand: TableHandle | None = self.get_optional_handle("rand")
             if rand is not None:
-                cache.store_rand(
+                cache.rand.set(
                     source=rand.path if handle_has_path(rand) else rand.read(),
                     patch_centers=patch_centers,
                     **self.get_stageparams(),
                 )
 
             data: TableHandle = self.get_handle("data")
-            cache.store_data(
+            cache.data.set(
                 source=data.path if handle_has_path(data) else data.read(),
                 patch_centers=patch_centers,
                 **self.get_stageparams(),
