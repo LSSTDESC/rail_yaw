@@ -19,7 +19,7 @@ from ceci.config import StageParameter
 from rail.core.stage import RailStage
 from rail.yaw_rail.logging import config_verbose
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from rail.core.data import DataHandle
 
 __all__ = [

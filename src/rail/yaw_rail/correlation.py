@@ -20,7 +20,7 @@ from rail.yaw_rail.cache import YawCacheHandle
 from rail.yaw_rail.logging import yaw_logged
 from rail.yaw_rail.stage import YawRailStage, create_param
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from rail.yaw_rail.cache import YawCache
 
 __all__ = [
@@ -74,11 +74,11 @@ class YawBaseCorrelate(YawRailStage):
 
     @abstractmethod
     def correlate(self, *inputs: YawCache) -> YawCorrFuncHandle:
-        pass
+        pass  # pragma: no cover
 
     @abstractmethod
     def run(self) -> None:
-        pass
+        pass  # pragma: no cover
 
 
 class YawAutoCorrelate(

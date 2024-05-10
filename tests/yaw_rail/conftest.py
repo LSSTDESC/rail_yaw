@@ -8,7 +8,7 @@ from yaw import UniformRandoms
 from rail.core.stage import RailStage
 from rail.yaw_rail.utils import get_dc2_test_data
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from pandas import DataFrame
     from rail.core.data import DataStore
 

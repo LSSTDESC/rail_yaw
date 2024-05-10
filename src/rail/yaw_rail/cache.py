@@ -23,7 +23,7 @@ from rail.core.data import DataHandle, TableHandle
 from rail.yaw_rail.logging import yaw_logged
 from rail.yaw_rail.stage import YawRailStage
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from pandas import DataFrame
     from yaw.catalogs.scipy import ScipyCatalog
     from yaw.core.coordinates import Coordinate, CoordSky
