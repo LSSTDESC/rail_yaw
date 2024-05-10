@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import TYPE_CHECKING
 
 from pandas import read_parquet
@@ -12,6 +13,7 @@ __all__ = [
 ]
 
 
+@lru_cache
 def get_dc2_test_data() -> DataFrame:
     link = "https://portal.nersc.gov/cfs/lsst/PZ/test_dc2_rail_yaw.pqt"
     return read_parquet(link)
