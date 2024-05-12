@@ -69,7 +69,7 @@ class YawBaseCorrelate(YawRailStage):
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
         self.yaw_config = Configuration.create(
-            **self.get_stageparams(exclude=["verbose"]),
+            **self.get_algo_config_dict(exclude=["verbose"]),
         )
 
     @abstractmethod
@@ -83,9 +83,11 @@ class YawBaseCorrelate(YawRailStage):
 
 class YawAutoCorrelate(
     YawBaseCorrelate,
-    **yaw_config_scales,
-    **yaw_config_zbins,
-    **yaw_config_backend,
+    config_items=dict(
+        **yaw_config_scales,
+        **yaw_config_zbins,
+        **yaw_config_backend,
+    ),
 ):
     """
     Measure the autocorrelation function amplitude for the give data sample.
@@ -110,7 +112,9 @@ class YawAutoCorrelate(
         return self.get_handle("corrfunc")
 
     def run(self) -> None:
-        with yaw_logged(self.config_options["verbose"].value):
+        config = self.get_config_dict()
+
+        with yaw_logged(config["verbose"]):
             cache_sample: YawCache = self.get_data("sample")
             data = cache_sample.data.get()
             rand = cache_sample.rand.get()
@@ -129,9 +133,11 @@ class YawAutoCorrelate(
 
 class YawCrossCorrelate(
     YawBaseCorrelate,
-    **yaw_config_scales,
-    **yaw_config_zbins,
-    **yaw_config_backend,
+    config_items=dict(
+        **yaw_config_scales,
+        **yaw_config_zbins,
+        **yaw_config_backend,
+    ),
 ):
     """
     Measure the cross-correlation function amplitude for the give reference
@@ -161,7 +167,9 @@ class YawCrossCorrelate(
         return self.get_handle("corrfunc")
 
     def run(self) -> None:
-        with yaw_logged(self.config_options["verbose"].value):
+        config = self.get_config_dict()
+
+        with yaw_logged(config["verbose"]):
             cache_ref: YawCache = self.get_data("reference")
             data_ref = cache_ref.data.get()
             rand_ref = cache_ref.rand.get()

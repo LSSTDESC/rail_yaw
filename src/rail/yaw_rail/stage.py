@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Container
+from copy import copy
 from dataclasses import fields
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -62,39 +63,37 @@ def create_param(
 
 
 class YawRailStage(ABC, RailStage):
-    stage_parameters: set[str]
+    algo_parameters: set[str]
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, config_items: dict[str, StageParameter] | None = None):
         cls.name = cls.__name__
         super().__init_subclass__()
 
         cls.config_options = super().config_options.copy()
 
-        kwargs["verbose"] = config_verbose
-        cls.config_options.update(kwargs)
-        cls.stage_parameters = set(kwargs.keys())
+        if config_items is None:
+            config_items = {}
+        else:
+            config_items = copy(config_items)
+        cls.config_options.update(config_items)
+        cls.algo_parameters = set(config_items.keys())
+
+        cls.config_options["verbose"] = config_verbose  # used for yaw logger
 
         param_str = "Parameters\n    ----------\n"
-        for name, param in kwargs.items():
+        for name, param in config_items.items():
             msg = param._help  # pylint: disable=W0212; PR filed in ceci
             param_str += f"    {name}: {param.dtype.__name__} \n"
             param_str += f"        {msg}\n"
         cls.__doc__ = cls.__doc__.replace("@YawParameters", param_str)
 
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
-
-        for name, param in self.config_options.items():
-            if name in args:
-                param.set(args[name])
-
-    def get_stageparams(self, exclude: Container[str] | None = None) -> dict[str, Any]:
+    def get_algo_config_dict(self, exclude: Container[str] | None = None) -> dict[str, Any]:
         if exclude is None:
             exclude = []
         return {
             key: param
             for key, param in self.get_config_dict(reduce_config=True).items()
-            if key in self.stage_parameters and key not in exclude
+            if key in self.algo_parameters and key not in exclude
         }
 
     def get_optional_handle(self, tag: str, **kwarg) -> DataHandle | None:

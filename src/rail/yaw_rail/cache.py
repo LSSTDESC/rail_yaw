@@ -292,9 +292,11 @@ def handle_has_path(handle: DataHandle) -> bool:
 
 class YawCacheCreate(
     YawRailStage,
-    **config_cache,
-    **yaw_config_columns,
-    **yaw_config_patches,
+    config_items=dict(
+        **config_cache,
+        **yaw_config_columns,
+        **yaw_config_patches,
+    ),
 ):
     """
     Split a data and (optional) random data set into spatial patches and
@@ -326,28 +328,29 @@ class YawCacheCreate(
         return self.get_handle("cache")
 
     def run(self) -> None:
-        with yaw_logged(self.config_options["verbose"].value):
-            patch_path = self.config_options["patches"].value
-            if patch_path is not None:
-                patch_centers = YawCache(patch_path).get_patch_centers()
+        config = self.get_config_dict()
+
+        with yaw_logged(config["verbose"]):
+            if config["patches"] is not None:
+                patch_centers = YawCache(config["patches"]).get_patch_centers()
             else:
                 patch_centers = None
 
-            cache = YawCache.create(self.config_options["path"].value)
+            cache = YawCache.create(config["path"])
 
             rand: TableHandle | None = self.get_optional_handle("rand")
             if rand is not None:
                 cache.rand.set(
                     source=rand.path if handle_has_path(rand) else rand.read(),
                     patch_centers=patch_centers,
-                    **self.get_stageparams(),
+                    **self.get_algo_config_dict(),
                 )
 
             data: TableHandle = self.get_handle("data")
             cache.data.set(
                 source=data.path if handle_has_path(data) else data.read(),
                 patch_centers=patch_centers,
-                **self.get_stageparams(),
+                **self.get_algo_config_dict(),
             )
 
         self.add_data("cache", cache)
