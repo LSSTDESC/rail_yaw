@@ -290,11 +290,6 @@ def handle_has_path(handle: DataHandle) -> bool:
     return handle.path is not None and handle.path != "None"
 
 
-def make_cache_alias(suffix: str) -> dict[str]:
-    keys = ("data", "rand", "cache")
-    return {key: f"{key}_{suffix}" for key in keys}
-
-
 class YawCacheCreate(
     YawRailStage,
     config_items=dict(
@@ -359,6 +354,13 @@ class YawCacheCreate(
             )
 
         self.add_data("cache", cache)
+
+
+def stage_helper(name: str) -> dict[str, Any]:
+    keys = []
+    keys.extend(key for key, _ in YawCacheCreate.inputs)
+    keys.extend(key for key, _ in YawCacheCreate.outputs)
+    return {key: f"{key}_{name}" for key in keys}
 
 
 class YawCacheDrop(YawRailStage):

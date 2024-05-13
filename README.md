@@ -38,6 +38,10 @@ all negative correlation amplitudes in all generated (spatial) samples to zero.
 This needs refinement in a future release, for now it is advised to use the raw
 clutering redshift estimate from yet_another_wizz.
 
+A jupyter notebook containing a full example with more detailed descriptions is
+included in
+
+> examples/full_example.ipynb
 
 ## RAIL: Redshift Assessment Infrastructure Layers
 
