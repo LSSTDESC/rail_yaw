@@ -30,10 +30,6 @@ __all__ = [
 ]
 
 
-def msg_fmt(name: str) -> str:
-    return f"Correlation estimator to use for {name}"
-
-
 key_to_cf_name = dict(
     cross="cross-correlation",
     ref="reference sample autocorrelation",
@@ -41,7 +37,9 @@ key_to_cf_name = dict(
 )
 
 yaw_config_est = {
-    f"{key}_est": StageParameter(dtype=str, required=False, msg=msg_fmt(name))
+    f"{key}_est": StageParameter(
+        dtype=str, required=False, msg=f"Correlation estimator to use for {name}"
+    )
     for key, name in key_to_cf_name.items()
 }
 yaw_config_resampling = {
