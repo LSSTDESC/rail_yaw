@@ -87,7 +87,9 @@ class YawRailStage(ABC, RailStage):
             param_str += f"        {msg}\n"
         cls.__doc__ = cls.__doc__.replace("@YawParameters", param_str)
 
-    def get_algo_config_dict(self, exclude: Container[str] | None = None) -> dict[str, Any]:
+    def get_algo_config_dict(
+        self, exclude: Container[str] | None = None
+    ) -> dict[str, Any]:
         if exclude is None:
             exclude = []
         return {

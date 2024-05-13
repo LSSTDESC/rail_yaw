@@ -15,5 +15,4 @@ __all__ = [
 
 @lru_cache
 def get_dc2_test_data() -> DataFrame:
-    link = "https://portal.nersc.gov/cfs/lsst/PZ/test_dc2_rail_yaw.pqt"
-    return read_parquet(link)
+    return read_parquet("https://portal.nersc.gov/cfs/lsst/PZ/test_dc2_rail_yaw.pqt")

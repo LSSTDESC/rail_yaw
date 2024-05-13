@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+from collections.abc import Iterator, Mapping
 from typing import TYPE_CHECKING, Any, TextIO
 
 from yaw import NewCatalog
@@ -288,6 +289,23 @@ class YawCacheHandle(DataHandle):
 def handle_has_path(handle: DataHandle) -> bool:
     """This is a workaround for a potential bug in RAIL."""
     return handle.path is not None and handle.path != "None"
+
+
+class AliasHelper(Mapping):
+    def __init__(self, suffix: str) -> None:
+        self.suffix = suffix
+        self._keys = ("data", "rand", "cache")
+
+    def __getitem__(self, key: str) -> str:
+        if key in self._keys:
+            return f"{key}_{self.suffix}"
+        raise KeyError(key)
+
+    def __iter__(self) -> Iterator[str]:
+        yield from self._keys
+
+    def __len__(self) -> int:
+        return len(self._keys)
 
 
 class YawCacheCreate(
