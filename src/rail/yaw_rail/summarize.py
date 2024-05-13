@@ -98,8 +98,10 @@ class YawRedshiftDataHandle(DataHandle):
 
 class YawSummarize(
     YawRailStage,
-    **yaw_config_est,
-    **yaw_config_resampling,
+    config_items=dict(
+        **yaw_config_est,
+        **yaw_config_resampling,
+    ),
 ):
     """
     Convert the clustering redshift estimate to an QP ensemble by clipping
@@ -144,18 +146,19 @@ class YawSummarize(
         return {name: self.get_handle(name) for name, _ in self.outputs}
 
     def run(self) -> None:
-        with yaw_logged(self.config_options["verbose"].value):
+        config = self.get_config_dict()
+
+        with yaw_logged(config["verbose"]):
             cross_corr: CorrFunc = self.get_data("cross_corr")
             ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
             unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
-            kwargs = {key: self.config_options[key].value for key in yaw_config_est}
 
             nz_cc = RedshiftData.from_corrfuncs(
                 cross_corr=cross_corr,
                 ref_corr=ref_corr,
                 unk_corr=unk_corr,
                 config=ResamplingConfig(),
-                **kwargs,
+                **self.get_algo_config_dict(exclude=yaw_config_resampling),
             )
 
             nz_clipped = clip_negative_values(nz_cc)
