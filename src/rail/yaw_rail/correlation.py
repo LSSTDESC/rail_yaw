@@ -62,9 +62,7 @@ class YawBaseCorrelate(YawRailStage):
     """Base class for correlation measurement stages"""
 
     inputs: list[tuple[str, YawCacheHandle]]
-    outputs = [
-        ("corrfunc", YawCorrFuncHandle),
-    ]
+    outputs: list[tuple[str, YawCorrFuncHandle]]
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
@@ -104,12 +102,15 @@ class YawAutoCorrelate(
     inputs = [
         ("sample", YawCacheHandle),
     ]
+    outputs = [
+        ("autocorr", YawCorrFuncHandle),
+    ]
 
     def correlate(self, sample: YawCache) -> YawCorrFuncHandle:  # pylint: disable=W0221
         self.set_data("sample", sample)
 
         self.run()
-        return self.get_handle("corrfunc")
+        return self.get_handle("autocorr")
 
     def run(self) -> None:
         config = self.get_config_dict()
@@ -128,7 +129,7 @@ class YawAutoCorrelate(
                     compute_rr=True,
                 )
 
-        self.add_data("corrfunc", corr)
+        self.add_data("autocorr", corr)
 
 
 class YawCrossCorrelate(
@@ -156,6 +157,9 @@ class YawCrossCorrelate(
         ("reference", YawCacheHandle),
         ("unknown", YawCacheHandle),
     ]
+    outputs = [
+        ("crosscorr", YawCorrFuncHandle),
+    ]
 
     def correlate(  # pylint: disable=W0221
         self, reference: YawCache, unknown: YawCache
@@ -164,7 +168,7 @@ class YawCrossCorrelate(
         self.set_data("unknown", unknown)
 
         self.run()
-        return self.get_handle("corrfunc")
+        return self.get_handle("crosscorr")
 
     def run(self) -> None:
         config = self.get_config_dict()
@@ -191,4 +195,4 @@ class YawCrossCorrelate(
                     unk_rand=rand_unk,
                 )
 
-        self.add_data("corrfunc", corr)
+        self.add_data("crosscorr", corr)
