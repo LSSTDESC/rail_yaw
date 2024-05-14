@@ -30,10 +30,6 @@ __all__ = [
 ]
 
 
-def msg_fmt(name: str) -> str:
-    return f"Correlation estimator to use for {name}"
-
-
 key_to_cf_name = dict(
     cross="cross-correlation",
     ref="reference sample autocorrelation",
@@ -41,7 +37,9 @@ key_to_cf_name = dict(
 )
 
 yaw_config_est = {
-    f"{key}_est": StageParameter(dtype=str, required=False, msg=msg_fmt(name))
+    f"{key}_est": StageParameter(
+        dtype=str, required=False, msg=f"Correlation estimator to use for {name}"
+    )
     for key, name in key_to_cf_name.items()
 }
 yaw_config_resampling = {
@@ -67,13 +65,14 @@ def clip_negative_values(nz: RedshiftData) -> RedshiftData:
 
 
 def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
-    nz_mids = nz.mids
+    nz_clipped = clip_negative_values(nz)
+    nz_mids = nz_clipped.mids
 
-    samples = nz.samples.copy()
+    samples = nz_clipped.samples.copy()
     for i, sample in enumerate(samples):
         samples[i] = sample / np.trapz(sample, x=nz_mids)
 
-    return qp.Ensemble(qp.hist, data=dict(bins=nz.edges, pdfs=samples))
+    return qp.Ensemble(qp.hist, data=dict(bins=nz_clipped.edges, pdfs=samples))
 
 
 class YawRedshiftDataHandle(DataHandle):
@@ -161,8 +160,7 @@ class YawSummarize(
                 **self.get_algo_config_dict(exclude=yaw_config_resampling),
             )
 
-            nz_clipped = clip_negative_values(nz_cc)
-            ensemble = redshift_data_to_qp(nz_clipped)
+            ensemble = redshift_data_to_qp(nz_cc)
 
         self.add_data("output", ensemble)
         self.add_data("yaw_cc", nz_cc)

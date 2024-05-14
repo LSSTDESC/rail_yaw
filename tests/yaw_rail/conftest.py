@@ -30,6 +30,11 @@ def fixture_mock_data(seed) -> DataFrame:
     return get_dc2_test_data().sample(20000, random_state=seed)
 
 
+@fixture(name="mock_data_small", scope="session")
+def fixture_mock_data_small(seed) -> DataFrame:
+    return get_dc2_test_data().sample(100, random_state=seed)
+
+
 @fixture(name="zlim", scope="session")
 def fixture_zlim(mock_data):
     redshifts = mock_data["z"].to_numpy()

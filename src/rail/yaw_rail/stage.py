@@ -35,7 +35,9 @@ def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
     for field in fields(config_cls):
         if field.name == parname:
             return {k[4:]: v for k, v in field.metadata.items()}
-    raise AttributeError(f"{config_cls} has no attribute '{parname}'")
+    raise AttributeError(
+        f"{config_cls} has no attribute '{parname}'"
+    )  # pragma: no cover
 
 
 def create_param(
@@ -81,10 +83,15 @@ class YawRailStage(ABC, RailStage):
         cls.config_options["verbose"] = config_verbose  # used for yaw logger
 
         param_str = "Parameters\n    ----------\n"
+        param_template = "    {:} : {:} \n        {:}\n"
         for name, param in config_items.items():
             msg = param._help  # pylint: disable=W0212; PR filed in ceci
-            param_str += f"    {name}: {param.dtype.__name__} \n"
-            param_str += f"        {msg}\n"
+            param_str += param_template.format(name, param.dtype.__name__, msg)
+        param_str += param_template.format(
+            "verbose",
+            config_verbose.dtype.__name__,
+            config_verbose._help,  # pylint: disable=W0212; PR filed in ceci
+        )
         cls.__doc__ = cls.__doc__.replace("@YawParameters", param_str)
 
     def get_algo_config_dict(
