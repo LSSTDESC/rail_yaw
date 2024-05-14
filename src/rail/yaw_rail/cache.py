@@ -130,7 +130,8 @@ class YawCatalog:
     def get(self) -> ScipyCatalog:
         if not self.exists():
             raise FileNotFoundError(f"no catalog cached at {self.path}")
-        self.catalog = NewCatalog().from_cache(self.path)
+        if self.catalog is None:
+            self.catalog = NewCatalog().from_cache(self.path)
         return self.catalog
 
     def set(
@@ -251,8 +252,6 @@ class YawCache:
 
     def drop(self) -> None:
         """Delete the entire cache directy. Invalidates this instance."""
-        if not os.path.exists(self.path):
-            return
         self.data.drop()
         self.rand.drop()
 
@@ -270,7 +269,7 @@ class YawCacheHandle(DataHandle):
 
     @classmethod
     def _open(cls, path: str, **kwargs) -> TextIO:
-        return open(path)
+        return open(path, **kwargs)
 
     @classmethod
     def _read(cls, path: str, **kwargs) -> YawCache:

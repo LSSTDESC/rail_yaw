@@ -1,19 +1,15 @@
 from __future__ import annotations
 
-from pytest import mark
+from yaw.examples import w_sp
 
-# from rail.yaw_rail import correlation
+from rail.yaw_rail import correlation
 
 
-class TestYawCorrFuncHandle:
-    @mark.skip
-    def test_open(self):
-        pass
+def test_YawCorrFuncHandle(tmp_path):
+    path = tmp_path / "test.pkl"
+    handle = correlation.YawCorrFuncHandle("corr_func", w_sp, path=path)
 
-    @mark.skip
-    def test_read(self):
-        pass
-
-    @mark.skip
-    def test_write(self):
-        pass
+    handle.write()  # ._write()
+    f = handle.open()  # ._open()
+    f.close()
+    assert handle.read(force=True) == w_sp  # ._read()

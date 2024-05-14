@@ -65,13 +65,14 @@ def clip_negative_values(nz: RedshiftData) -> RedshiftData:
 
 
 def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
-    nz_mids = nz.mids
+    nz_clipped = clip_negative_values(nz)
+    nz_mids = nz_clipped.mids
 
-    samples = nz.samples.copy()
+    samples = nz_clipped.samples.copy()
     for i, sample in enumerate(samples):
         samples[i] = sample / np.trapz(sample, x=nz_mids)
 
-    return qp.Ensemble(qp.hist, data=dict(bins=nz.edges, pdfs=samples))
+    return qp.Ensemble(qp.hist, data=dict(bins=nz_clipped.edges, pdfs=samples))
 
 
 class YawRedshiftDataHandle(DataHandle):
@@ -159,8 +160,7 @@ class YawSummarize(
                 **self.get_algo_config_dict(exclude=yaw_config_resampling),
             )
 
-            nz_clipped = clip_negative_values(nz_cc)
-            ensemble = redshift_data_to_qp(nz_clipped)
+            ensemble = redshift_data_to_qp(nz_cc)
 
         self.add_data("output", ensemble)
         self.add_data("yaw_cc", nz_cc)

@@ -29,6 +29,7 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov", # Used to report total code coverage
+    "pytest-skip-slow", # skip the slow pipeline tests
     "pre-commit", # Used to run checks before finalizing a git commit
     "pylint", # Used for static linting of files
     "black", # code style
@@ -51,7 +52,8 @@ testpaths = [
 ]
 addopts = [
     "--cov=rail",
-    "--cov-report=html"
+    "--cov-report=html",
+    "--slow",
 ]
 
 [tool.pylint]
