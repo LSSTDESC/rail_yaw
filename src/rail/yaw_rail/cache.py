@@ -154,7 +154,7 @@ class YawCatalog:
         self.catalog = None
         self._patch_center_callback = None
 
-    def set_patch_center_callback(self, cat: YawCatalog) -> None:
+    def set_patch_center_callback(self, cat: YawCatalog | None) -> None:
         """
         Register a different `YawCatalog` instance that defines the patch
         centers to use.
@@ -166,12 +166,16 @@ class YawCatalog:
 
         Parameters
         ----------
-        cat : YawCatalog
+        cat : YawCatalog or None
             The catalog instance that acts are reference for the patch centers.
+            If `None`, removes the callback.
         """
-        if not isinstance(cat, YawCatalog):
+        if cat is None:
+            self._patch_center_callback = None
+        elif isinstance(cat, YawCatalog):
+            self._patch_center_callback = lambda: cat.get().centers
+        else:
             raise TypeError("referenced catalog is not a 'YawCatalog'")
-        self._patch_center_callback = lambda: cat.get().centers
 
     def exists(self) -> bool:
         """Whether the catalog's cache directory exists."""
