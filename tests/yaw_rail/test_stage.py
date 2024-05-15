@@ -9,7 +9,10 @@ from rail.core.stage import RailStage
 from rail.yaw_rail import stage
 
 
-class TestStage(stage.YawRailStage, config_items=dict(test=StageParameter(dtype=int))):
+class StageTester(
+    stage.YawRailStage,
+    config_items=dict(test=StageParameter(dtype=int)),
+):
     """@YawParameters"""
 
     inputs = [("input", TableHandle)]
@@ -21,9 +24,9 @@ class StageMakerAliased:
     count = 0
 
     @classmethod
-    def make_stage(cls) -> TestStage:
+    def make_stage(cls) -> StageTester:
         cls.count += 1
-        return TestStage.make_stage(
+        return StageTester.make_stage(
             test=0, name=f"stage{cls.count}", aliases=dict(input=f"input_{cls.count}")
         )
 
@@ -35,12 +38,12 @@ def make_test_handle() -> TableHandle:
 
 class TestYawRailStage:
     def test_init_subclass(self):
-        assert TestStage.name == TestStage.__name__
-        assert set(TestStage.config_options) == (
-            set(RailStage.config_options) | TestStage.algo_parameters | {"verbose"}
+        assert StageTester.name == StageTester.__name__
+        assert set(StageTester.config_options) == (
+            set(RailStage.config_options) | StageTester.algo_parameters | {"verbose"}
         )
-        assert "test" in TestStage.__doc__
-        assert "verbose" in TestStage.__doc__
+        assert "test" in StageTester.__doc__
+        assert "verbose" in StageTester.__doc__
 
     def test_get_algo_config_dict(self):
         test_stage = StageMakerAliased.make_stage()

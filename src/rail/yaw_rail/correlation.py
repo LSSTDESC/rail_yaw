@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 import h5py
 from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
 
+from ceci.stage import StageParameter
 from rail.core.data import DataHandle
 from rail.yaw_rail.cache import YawCacheHandle
 from rail.yaw_rail.logging import yaw_logged
@@ -37,9 +38,15 @@ yaw_config_zbins = {
     p: create_param("binning", p)
     for p in ("zmin", "zmax", "zbin_num", "method", "zbins")
 }
-yaw_config_backend = {
-    p: create_param("backend", p) for p in ("crosspatch", "thread_num")
-}
+yaw_config_backend = {p: create_param("backend", p) for p in ("crosspatch",)}
+# Since the current implementation does not support MPI, we need to implement
+# the number of threads manually. The code uses multiprocessing and can only
+# run on a single machine.
+yaw_config_backend["thread_num"] = StageParameter(
+    int,
+    required=False,
+    msg="the number of threads to use by the multiprocessing backend (single machine, MPI not yet supported)",
+)
 
 
 class YawCorrFuncHandle(DataHandle):

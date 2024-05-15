@@ -77,9 +77,9 @@ class YawRailStage(ABC, RailStage):
             config_items = {}
         else:
             config_items = copy(config_items)
-        cls.config_options.update(config_items)
         cls.algo_parameters = set(config_items.keys())
 
+        cls.config_options.update(config_items)
         cls.config_options["verbose"] = config_verbose  # used for yaw logger
 
         param_str = "Parameters\n    ----------\n"
@@ -87,6 +87,7 @@ class YawRailStage(ABC, RailStage):
         for name, param in config_items.items():
             msg = param._help  # pylint: disable=W0212; PR filed in ceci
             param_str += param_template.format(name, param.dtype.__name__, msg)
+
         param_str += param_template.format(
             "verbose",
             config_verbose.dtype.__name__,
