@@ -92,7 +92,7 @@ class YawRailStage(ABC, RailStage):
     - setting the `name` attribute automatically to the class name,
     - copying the default `RailStage.config_options`,
     - providing an interface to directly register a dictionary of algorithm-
-      specific configuration parameters.
+      specific configuration parameters, and
     - automatically adding the `"verbose"` parameter to the stage, which
       controlls the log-level filtering for the *yet_another_wizz* logger.
 

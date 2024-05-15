@@ -50,7 +50,8 @@ yaw_config_backend["thread_num"] = StageParameter(
 
 
 class YawCorrFuncHandle(DataHandle):
-    """Class to act as a handle for a `yaw.CorrFunc` instance, associating it
+    """
+    Class to act as a handle for a `yaw.CorrFunc` instance, associating it
     with a file and providing tools to read & write it to that file.
 
     Parameters
@@ -96,10 +97,6 @@ class YawBaseCorrelate(YawRailStage):
     def correlate(self, *inputs: YawCache) -> YawCorrFuncHandle:
         pass  # pragma: no cover
 
-    @abstractmethod
-    def run(self) -> None:
-        pass  # pragma: no cover
-
 
 class YawAutoCorrelate(
     YawBaseCorrelate,
@@ -110,9 +107,12 @@ class YawAutoCorrelate(
     ),
 ):
     """
-    TODO.
+    Wrapper stage for `yaw.autocorrelate` to compute a sample's angular
+    autocorrelation amplitude.
 
-    @YawParameters
+    Generally used for the reference sample to compute an estimate for its
+    galaxy sample as a function of redshift. Data is provided as a single cache
+    directory that must have redshifts and randoms with redshift attached.
     """
 
     inputs = [
@@ -123,6 +123,20 @@ class YawAutoCorrelate(
     ]
 
     def correlate(self, sample: YawCache) -> YawCorrFuncHandle:  # pylint: disable=W0221
+        """
+        Measure the angular autocorrelation amplitude in bins of redshift.
+
+        Parameters
+        ----------
+        sample : YawCache
+            Input cache which must have randoms attached and redshifts for both
+            data set and randoms.
+
+        Returns
+        -------
+        YawCorrFuncHandle
+            A handle for the `yaw.CorrFunc` instance that holds the pair counts.
+        """
         self.set_data("sample", sample)
 
         self.run()
@@ -157,9 +171,13 @@ class YawCrossCorrelate(
     ),
 ):
     """
-    TODO.
+    Wrapper stage for `yaw.crosscorrelate` to compute the angular cross-
+    correlation amplitude between the reference and the unknown sample.
 
-    @YawParameters
+    Generally used for the reference sample to compute an estimate for its
+    galaxy sample as a function of redshift. Data sets are provided as cache
+    directories. The reference sample must have redshifts and at least one
+    cache must have randoms attached.
     """
 
     inputs = [
@@ -173,6 +191,23 @@ class YawCrossCorrelate(
     def correlate(  # pylint: disable=W0221
         self, reference: YawCache, unknown: YawCache
     ) -> YawCorrFuncHandle:
+        """
+        Measure the angular cross-correlation amplitude in bins of redshift.
+
+        Parameters
+        ----------
+        reference : YawCache
+            Cache for the reference data, must have redshifts. If no randoms are
+            attached, the unknown data cache must provide them.
+        unknown : YawCache
+            Cache for the unknown data. If no randoms are attached, the
+            reference data cache must provide them.
+
+        Returns
+        -------
+        YawCorrFuncHandle
+            A handle for the `yaw.CorrFunc` instance that holds the pair counts.
+        """
         self.set_data("reference", reference)
         self.set_data("unknown", unknown)
 

@@ -430,7 +430,8 @@ class YawCache:
 
 
 class YawCacheHandle(DataHandle):
-    """Class to act as a handle for a `YawCache` instance, associating it with a
+    """
+    Class to act as a handle for a `YawCache` instance, associating it with a
     file and providing tools to read & write it to that file.
 
     Parameters
@@ -477,9 +478,22 @@ class YawCacheCreate(
     ),
 ):
     """
-    TODO.
+    Create a new cache directory to hold a data set and optionally its matching
+    random catalog.
 
-    @YawParameters
+    Both inputs are split into consistent spatial patches that are required by
+    *yet_another_wizz* for correlation function covariance estimates. Each
+    patch is cached separately for efficient access.
+
+    The cache can be constructed from input files or tabular data in memory.
+    Column names for sky coordinates are required, redshifts and per-object
+    weights are optional. One out of three patch create methods must be
+    specified:
+    1. Splitting the data into predefined patches (e.g. form an existing cache
+       instance).
+    2. Splitting the data based on a column with patch indices.
+    3. Generating approximately equal size patches using k-means clustering of
+       objects positions (preferably randoms if provided).
     """
 
     inputs = [
@@ -490,9 +504,25 @@ class YawCacheCreate(
         ("cache", YawCacheHandle),
     ]
 
-    def create(
-        self, data: TableHandle, rand: TableHandle | None = None
-    ) -> YawCacheHandle:
+    def create(self, data: DataFrame, rand: DataFrame | None = None) -> YawCacheHandle:
+        """
+        Create the new cache directory and split the input data into spatial
+        patches.
+
+        Parameters
+        ----------
+        data : DataFrame
+            The data set to split into patches and cache.
+        rand : DataFrame, optional
+            The randoms to split into patches and cache, positions used to
+            automatically generate patch centers if provided and stage is
+            configured with `n_patches`.
+
+        Returns
+        -------
+        YawCacheHandle
+            A handle for the newly created cache directory.
+        """
         self.set_data("data", data)
         self.set_optional_data("rand", rand)
 
@@ -552,11 +582,7 @@ def stage_helper(suffix: str) -> dict[str, Any]:
 
 
 class YawCacheDrop(YawRailStage):
-    """
-    TODO.
-
-    @YawParameters
-    """
+    """Utility stage to delete a *yet_another_wizz* cache directory."""
 
     inputs = [
         ("cache", YawCacheHandle),
@@ -568,5 +594,13 @@ class YawCacheDrop(YawRailStage):
         cache.drop()
 
     def drop(self, cache: YawCache) -> None:
+        """
+        Delete a data cache.
+
+        Parameters
+        ----------
+        cache : YawCache
+            The cache to delete.
+        """
         self.set_data("cache", cache)
         self.run()

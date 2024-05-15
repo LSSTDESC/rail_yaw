@@ -70,7 +70,3 @@ code used.  A list of such codes is included in the
 [Citing RAIL](https://lsstdescrail.readthedocs.io/en/stable/source/citing.html)
 section of the main RAIL Read The Docs page.
 
-## TODO List
-
-- Create an example notebook
-- Citing?
