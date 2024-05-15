@@ -8,7 +8,7 @@ stage properties and configuration definition.
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Container
 from copy import copy
 from dataclasses import fields
@@ -120,33 +120,21 @@ class YawRailStage(ABC, RailStage):
     algo_parameters: set[str]
     """Lists the names of all algorithm-specific parameters."""
 
-    def __init_subclass__(cls, config_items: dict[str, StageParameter] | None = None):
-        cls.name = cls.__name__
-        super().__init_subclass__()
-
-        cls.config_options = super().config_options.copy()
-
+    def __init_subclass__(
+        cls, config_items: dict[str, StageParameter] | None = None, **kwargs
+    ):
         if config_items is None:
             config_items = {}
         else:
             config_items = copy(config_items)
-        cls.algo_parameters = set(config_items.keys())
 
+        cls.name = cls.__name__
+        cls.algo_parameters = set(config_items.keys())
+        cls.config_options = super().config_options.copy()
         cls.config_options.update(config_items)
         cls.config_options["verbose"] = config_verbose  # used for yaw logger
 
-        param_str = "Parameters\n    ----------\n"
-        param_template = "    {:} : {:} \n        {:}\n"
-        for name, param in config_items.items():
-            msg = param._help  # pylint: disable=W0212; PR filed in ceci
-            param_str += param_template.format(name, param.dtype.__name__, msg)
-
-        param_str += param_template.format(
-            "verbose",
-            config_verbose.dtype.__name__,
-            config_verbose._help,  # pylint: disable=W0212; PR filed in ceci
-        )
-        cls.__doc__ = cls.__doc__.replace("@YawParameters", param_str)
+        super().__init_subclass__(**kwargs)  # delegate back to rail/ceci
 
     def get_algo_config_dict(
         self, exclude: Container[str] | None = None
@@ -232,3 +220,7 @@ class YawRailStage(ABC, RailStage):
         """
         if value is not None:
             self.set_data(tag, value, **kwarg)
+
+    @abstractmethod
+    def run(self) -> None:
+        pass  # pragma: no cover

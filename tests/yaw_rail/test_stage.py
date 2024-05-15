@@ -13,10 +13,13 @@ class StageTester(
     stage.YawRailStage,
     config_items=dict(test=StageParameter(dtype=int)),
 ):
-    """@YawParameters"""
+    """__doc__"""
 
     inputs = [("input", TableHandle)]
     outputs = [("output", TableHandle)]
+
+    def run(self):
+        pass
 
 
 class StageMakerAliased:
@@ -42,6 +45,8 @@ class TestYawRailStage:
         assert set(StageTester.config_options) == (
             set(RailStage.config_options) | StageTester.algo_parameters | {"verbose"}
         )
+        assert StageTester.__doc__.startswith("__doc__")
+        # NOTE: doc-strings not updated if StageTester has any abstract methods
         assert "test" in StageTester.__doc__
         assert "verbose" in StageTester.__doc__
 
