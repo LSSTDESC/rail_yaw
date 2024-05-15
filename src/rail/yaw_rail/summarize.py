@@ -52,6 +52,8 @@ yaw_config_resampling = {
 
 
 def clip_negative_values(nz: RedshiftData) -> RedshiftData:
+    """Replace all non-finite and negative values in a `yaw.RedshiftData`
+    instance with zeros."""
     data = np.nan_to_num(nz.data, nan=0.0, posinf=0.0, neginf=0.0)
     samples = np.nan_to_num(nz.samples, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -65,6 +67,8 @@ def clip_negative_values(nz: RedshiftData) -> RedshiftData:
 
 
 def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
+    """Convert a `yaw.RedshiftData` instance to a `qp.Ensemble` by clipping
+    negative values and normalising the spatial samples to PDFs."""
     nz_clipped = clip_negative_values(nz)
     nz_mids = nz_clipped.mids
 
@@ -76,6 +80,21 @@ def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
 
 
 class YawRedshiftDataHandle(DataHandle):
+    """Class to act as a handle for a `yaw.RedshiftData` instance, associating
+    it with a file and providing tools to read & write it to that file.
+
+    Parameters
+    ----------
+    tag : str
+        The tag under which this data handle can be found in the store.
+    data : any or None
+        The associated data.
+    path : str or None
+        The path to the associated file.
+    creator : str or None
+        The name of the stage that created this data handle.
+    """
+
     data: RedshiftData
 
     @classmethod
@@ -103,17 +122,9 @@ class YawSummarize(
     ),
 ):
     """
-    Convert the clustering redshift estimate to an QP ensemble by clipping
-    negative values and substituting non-finite values.
+    TODO.
 
     @YawParameters
-
-    Returns
-    -------
-    output: QPHandle
-        The final QP ensemble.
-    yaw_cc: YawRedshiftDataHandle
-        A yet_another_wizz RedshiftData container containing all output data.
     """
 
     inputs = [

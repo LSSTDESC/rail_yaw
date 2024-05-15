@@ -26,6 +26,9 @@ config_verbose = StageParameter(
 
 
 class OnlyYawFilter(logging.Filter):
+    """A logging filter that rejects all messages not emitted by
+    *yet_another_wizz*."""
+
     def filter(self, record):
         record.exc_info = None
         record.exc_text = None
@@ -33,6 +36,8 @@ class OnlyYawFilter(logging.Filter):
 
 
 def init_logger(level: str = "info") -> logging.Logger:
+    """Init a logger that writes *yet_another_wizz* messages to stderr in a
+    custom format."""
     level = getattr(logging, level.upper())
     formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
 
@@ -47,6 +52,16 @@ def init_logger(level: str = "info") -> logging.Logger:
 
 @contextmanager
 def yaw_logged(level: str = "debug"):
+    """
+    Context manager that creates a temporary logger that redirects messages
+    emitted by *yet_another_wizz* to stderr.
+
+    Parameters
+    ----------
+    level : str
+        Controlls how verbose messages are, options are `"critical"`, `"error"`,
+        `"warning"`, `"info"`, or `"debug"`.
+    """
     logger = init_logger(level=level)
     try:
         yield logger

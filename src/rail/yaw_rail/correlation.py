@@ -50,6 +50,21 @@ yaw_config_backend["thread_num"] = StageParameter(
 
 
 class YawCorrFuncHandle(DataHandle):
+    """Class to act as a handle for a `yaw.CorrFunc` instance, associating it
+    with a file and providing tools to read & write it to that file.
+
+    Parameters
+    ----------
+    tag : str
+        The tag under which this data handle can be found in the store.
+    data : any or None
+        The associated data.
+    path : str or None
+        The path to the associated file.
+    creator : str or None
+        The name of the stage that created this data handle.
+    """
+
     data: CorrFunc
 
     @classmethod
@@ -66,7 +81,7 @@ class YawCorrFuncHandle(DataHandle):
 
 
 class YawBaseCorrelate(YawRailStage):
-    """Base class for correlation measurement stages"""
+    """Base class for correlation measurement stages."""
 
     inputs: list[tuple[str, YawCacheHandle]]
     outputs: list[tuple[str, YawCorrFuncHandle]]
@@ -95,15 +110,9 @@ class YawAutoCorrelate(
     ),
 ):
     """
-    Measure the autocorrelation function amplitude for the give data sample.
+    TODO.
 
     @YawParameters
-
-    Returns
-    -------
-    corrfunc: YawCorrFuncHandle
-        The measured correlation function stored as pair counts per spatial
-        patch and redshift bin.
     """
 
     inputs = [
@@ -148,16 +157,9 @@ class YawCrossCorrelate(
     ),
 ):
     """
-    Measure the cross-correlation function amplitude for the give reference
-    and unknown sample.
+    TODO.
 
     @YawParameters
-
-    Returns
-    -------
-    corrfunc: YawCorrFuncHandle
-        The measured correlation function stored as pair counts per spatial
-        patch and redshift bin.
     """
 
     inputs = [
