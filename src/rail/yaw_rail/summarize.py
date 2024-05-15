@@ -189,23 +189,21 @@ class YawSummarize(
         self.run()
         return {name: self.get_handle(name) for name, _ in self.outputs}
 
+    @yaw_logged
     def run(self) -> None:
-        config = self.get_config_dict()
+        cross_corr: CorrFunc = self.get_data("cross_corr")
+        ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
+        unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
 
-        with yaw_logged(config["verbose"]):
-            cross_corr: CorrFunc = self.get_data("cross_corr")
-            ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
-            unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
+        nz_cc = RedshiftData.from_corrfuncs(
+            cross_corr=cross_corr,
+            ref_corr=ref_corr,
+            unk_corr=unk_corr,
+            config=ResamplingConfig(),
+            **self.get_algo_config_dict(exclude=config_yaw_resampling),
+        )
 
-            nz_cc = RedshiftData.from_corrfuncs(
-                cross_corr=cross_corr,
-                ref_corr=ref_corr,
-                unk_corr=unk_corr,
-                config=ResamplingConfig(),
-                **self.get_algo_config_dict(exclude=config_yaw_resampling),
-            )
-
-            ensemble = redshift_data_to_qp(nz_cc)
+        ensemble = redshift_data_to_qp(nz_cc)
 
         self.add_data("output", ensemble)
         self.add_data("yaw_cc", nz_cc)

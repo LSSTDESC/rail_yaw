@@ -143,22 +143,20 @@ class YawAutoCorrelate(
         self.run()
         return self.get_handle("autocorr")
 
+    @yaw_logged
     def run(self) -> None:
-        config = self.get_config_dict()
+        cache_sample: YawCache = self.get_data("sample")
+        data = cache_sample.data.get()
+        rand = cache_sample.rand.get()
 
-        with yaw_logged(config["verbose"]):
-            cache_sample: YawCache = self.get_data("sample")
-            data = cache_sample.data.get()
-            rand = cache_sample.rand.get()
-
-            with warnings.catch_warnings():
-                warnings.simplefilter(action="ignore", category=FutureWarning)
-                corr = autocorrelate(
-                    config=self.yaw_config,
-                    data=data,
-                    random=rand,
-                    compute_rr=True,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore", category=FutureWarning)
+            corr = autocorrelate(
+                config=self.yaw_config,
+                data=data,
+                random=rand,
+                compute_rr=True,
+            )
 
         self.add_data("autocorr", corr)
 
@@ -227,23 +225,21 @@ class YawCrossCorrelate(
         except FileNotFoundError:
             return data, None
 
+    @yaw_logged
     def run(self) -> None:
-        config = self.get_config_dict()
+        data_ref, rand_ref = self._get_catalogs("reference")
+        data_unk, rand_unk = self._get_catalogs("unknown")
+        if rand_ref is None and rand_unk is None:
+            raise ValueError("no randoms provided")  # pragma: no cover
 
-        with yaw_logged(config["verbose"]):
-            data_ref, rand_ref = self._get_catalogs("reference")
-            data_unk, rand_unk = self._get_catalogs("unknown")
-            if rand_ref is None and rand_unk is None:
-                raise ValueError("no randoms provided")  # pragma: no cover
-
-            with warnings.catch_warnings():
-                warnings.simplefilter(action="ignore", category=FutureWarning)
-                corr = crosscorrelate(
-                    config=self.yaw_config,
-                    reference=data_ref,
-                    unknown=data_unk,
-                    ref_rand=rand_ref,
-                    unk_rand=rand_unk,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore", category=FutureWarning)
+            corr = crosscorrelate(
+                config=self.yaw_config,
+                reference=data_ref,
+                unknown=data_unk,
+                ref_rand=rand_ref,
+                unk_rand=rand_unk,
+            )
 
         self.add_data("crosscorr", corr)

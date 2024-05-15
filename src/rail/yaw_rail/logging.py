@@ -8,9 +8,13 @@ from __future__ import annotations
 
 import logging
 import sys
-from contextlib import contextmanager
+from functools import wraps
+from typing import TYPE_CHECKING
 
 from ceci.stage import StageParameter
+
+if TYPE_CHECKING:  # pragma: no cover
+    from rail.yaw_rail.stage import YawRailStage
 
 __all__ = [
     "yaw_logged",
@@ -50,22 +54,21 @@ def init_logger(level: str = "info") -> logging.Logger:
     return logging.getLogger()
 
 
-@contextmanager
-def yaw_logged(level: str = "debug"):
+def yaw_logged(method):
     """
-    Context manager that creates a temporary logger that redirects messages
-    emitted by *yet_another_wizz* to stderr.
+    Decorator that creates a temporary logger for a method of a `YawRailStage`
+    that redirects messages emitted by *yet_another_wizz* to stderr.
+    """
 
-    Parameters
-    ----------
-    level : str
-        Controlls how verbose messages are, options are `"critical"`, `"error"`,
-        `"warning"`, `"info"`, or `"debug"`.
-    """
-    logger = init_logger(level=level)
-    try:
-        yield logger
-    finally:
-        for handler in logger.handlers[:]:
-            handler.close()
-            logger.removeHandler(handler)
+    @wraps(method)
+    def impl(self: YawRailStage, *args, **kwargs):
+        config = self.get_config_dict()
+        logger = init_logger(level=config["verbose"])
+        try:
+            return method(self, *args, **kwargs)
+        finally:
+            for handler in logger.handlers[:]:
+                handler.close()
+                logger.removeHandler(handler)
+
+    return impl

@@ -11,6 +11,7 @@ between RAIL stages to define inputs for the correlation function stages.
 
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 from typing import TYPE_CHECKING, Any, TextIO
@@ -34,6 +35,8 @@ __all__ = [
     "YawCacheHandle",
 ]
 
+
+logger = logging.getLogger(__name__)
 
 config_yaw_columns = dict(
     ra_name=StageParameter(
@@ -383,6 +386,7 @@ class YawCache:
             except FileNotFoundError as err:
                 raise OSError("can only overwrite existing cache directories") from err
 
+        logger.info("creating new cache directory '%s'", normalised)
         os.makedirs(normalised)
         with open(os.path.join(normalised, cls._flag_path), "w"):
             pass
@@ -430,6 +434,7 @@ class YawCache:
 
     def drop(self) -> None:
         """Delete the entire cache directy."""
+        logger.info("dropping cache directory '%s'", self.path)
         shutil.rmtree(self.path)
 
 
@@ -533,31 +538,31 @@ class YawCacheCreate(
         self.run()
         return self.get_handle("cache")
 
+    @yaw_logged
     def run(self) -> None:
         config = self.get_config_dict()
 
-        with yaw_logged(config["verbose"]):
-            if config["patches"] is not None:
-                patch_centers = YawCache(config["patches"]).get_patch_centers()
-            else:
-                patch_centers = None
+        if config["patches"] is not None:
+            patch_centers = YawCache(config["patches"]).get_patch_centers()
+        else:
+            patch_centers = None
 
-            cache = YawCache.create(config["path"], overwrite=config["overwrite"])
+        cache = YawCache.create(config["path"], overwrite=config["overwrite"])
 
-            rand: TableHandle | None = self.get_optional_handle("rand")
-            if rand is not None:
-                cache.rand.set(
-                    source=rand.path if handle_has_path(rand) else rand.read(),
-                    patch_centers=patch_centers,
-                    **self.get_algo_config_dict(),
-                )
-
-            data: TableHandle = self.get_handle("data")
-            cache.data.set(
-                source=data.path if handle_has_path(data) else data.read(),
+        rand: TableHandle | None = self.get_optional_handle("rand")
+        if rand is not None:
+            cache.rand.set(
+                source=rand.path if handle_has_path(rand) else rand.read(),
                 patch_centers=patch_centers,
                 **self.get_algo_config_dict(),
             )
+
+        data: TableHandle = self.get_handle("data")
+        cache.data.set(
+            source=data.path if handle_has_path(data) else data.read(),
+            patch_centers=patch_centers,
+            **self.get_algo_config_dict(),
+        )
 
         self.add_data("cache", cache)
 
