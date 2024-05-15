@@ -186,7 +186,7 @@ class YawRailStage(ABC, RailStage):
 
     def get_optional_data(self, tag: str, **kwarg) -> Any | None:
         """
-        Access a handle's data without raising a `get_data` if it is not set.
+        Access a handle's data without raising a `KeyError` if it is not set.
 
         Parameters
         ----------

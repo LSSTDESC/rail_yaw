@@ -110,7 +110,7 @@ class YawRedshiftDataHandle(DataHandle):
 
     @classmethod
     def _write(cls, data: RedshiftData, path: str, **kwargs) -> None:
-        # cannot use native I/O methods because the produce multiple files
+        # cannot use native yaw I/O methods because they produce multiple files
         with open(path, mode="wb") as f:
             pickle.dump(data, f)
 

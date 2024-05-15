@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import warnings
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import h5py
 from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
@@ -23,6 +23,7 @@ from rail.yaw_rail.stage import YawRailStage, create_param
 
 if TYPE_CHECKING:  # pragma: no cover
     from rail.yaw_rail.cache import YawCache
+    from yaw.catalogs.scipy import ScipyCatalog
 
 __all__ = [
     "YawAutoCorrelate",
@@ -214,20 +215,26 @@ class YawCrossCorrelate(
         self.run()
         return self.get_handle("crosscorr")
 
+    def _get_catalogs(
+        self,
+        tag: Literal["reference", "unknown"],
+    ) -> tuple[ScipyCatalog, ScipyCatalog | None]:
+        """Get the catalog(s) from the given input cache handle"""
+        cache: YawCache = self.get_data(tag)
+        data = cache.data.get()
+        try:
+            return data, cache.rand.get()
+        except FileNotFoundError:
+            return data, None
+
     def run(self) -> None:
         config = self.get_config_dict()
 
         with yaw_logged(config["verbose"]):
-            cache_ref: YawCache = self.get_data("reference")
-            data_ref = cache_ref.data.get()
-            rand_ref = cache_ref.rand.get()
-
-            cache_unk: YawCache = self.get_data("unknown")
-            data_unk = cache_unk.data.get()
-            try:
-                rand_unk = cache_unk.rand.get()
-            except FileNotFoundError:
-                rand_unk = None
+            data_ref, rand_ref = self._get_catalogs("reference")
+            data_unk, rand_unk = self._get_catalogs("unknown")
+            if rand_ref is None and rand_unk is None:
+                raise ValueError("no randoms provided")  # pragma: no cover
 
             with warnings.catch_warnings():
                 warnings.simplefilter(action="ignore", category=FutureWarning)
