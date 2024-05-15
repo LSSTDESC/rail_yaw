@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 
-config_verbose = StageParameter(
+config_yaw_verbose = StageParameter(
     str,
     required=False,
     default="info",

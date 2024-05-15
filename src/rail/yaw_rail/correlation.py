@@ -31,18 +31,18 @@ __all__ = [
 ]
 
 
-yaw_config_scales = {
+config_yaw_scales = {
     p: create_param("scales", p) for p in ("rmin", "rmax", "rweight", "rbin_num")
 }
-yaw_config_zbins = {
+config_yaw_zbins = {
     p: create_param("binning", p)
     for p in ("zmin", "zmax", "zbin_num", "method", "zbins")
 }
-yaw_config_backend = {p: create_param("backend", p) for p in ("crosspatch",)}
+config_yaw_backend = {p: create_param("backend", p) for p in ("crosspatch",)}
 # Since the current implementation does not support MPI, we need to implement
 # the number of threads manually. The code uses multiprocessing and can only
 # run on a single machine.
-yaw_config_backend["thread_num"] = StageParameter(
+config_yaw_backend["thread_num"] = StageParameter(
     int,
     required=False,
     msg="the number of threads to use by the multiprocessing backend (single machine, MPI not yet supported)",
@@ -101,9 +101,9 @@ class YawBaseCorrelate(YawRailStage):
 class YawAutoCorrelate(
     YawBaseCorrelate,
     config_items=dict(
-        **yaw_config_scales,
-        **yaw_config_zbins,
-        **yaw_config_backend,
+        **config_yaw_scales,
+        **config_yaw_zbins,
+        **config_yaw_backend,
     ),
 ):
     """
@@ -165,9 +165,9 @@ class YawAutoCorrelate(
 class YawCrossCorrelate(
     YawBaseCorrelate,
     config_items=dict(
-        **yaw_config_scales,
-        **yaw_config_zbins,
-        **yaw_config_backend,
+        **config_yaw_scales,
+        **config_yaw_zbins,
+        **config_yaw_backend,
     ),
 ):
     """

@@ -30,19 +30,19 @@ __all__ = [
 ]
 
 
-key_to_cf_name = dict(
+_key_to_cf_name = dict(
     cross="cross-correlation",
     ref="reference sample autocorrelation",
     unk="unknown sample autocorrelation",
 )
 
-yaw_config_est = {
+config_yaw_est = {
     f"{key}_est": StageParameter(
         dtype=str, required=False, msg=f"Correlation estimator to use for {name}"
     )
-    for key, name in key_to_cf_name.items()
+    for key, name in _key_to_cf_name.items()
 }
-yaw_config_resampling = {
+config_yaw_resampling = {
     # resampling method: "method" (currently only "jackknife")
     # bootstrapping (not implemented in yet_another_wizz): "n_boot", "seed"
     # omitted: "global_norm"
@@ -118,8 +118,8 @@ class YawRedshiftDataHandle(DataHandle):
 class YawSummarize(
     YawRailStage,
     config_items=dict(
-        **yaw_config_est,
-        **yaw_config_resampling,
+        **config_yaw_est,
+        **config_yaw_resampling,
     ),
 ):
     """
@@ -148,7 +148,7 @@ class YawSummarize(
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        config = {p: self.config_options[p].value for p in yaw_config_resampling}
+        config = {p: self.config_options[p].value for p in config_yaw_resampling}
         self.yaw_config = ResamplingConfig.create(**config)
 
     def summarize(
@@ -202,7 +202,7 @@ class YawSummarize(
                 ref_corr=ref_corr,
                 unk_corr=unk_corr,
                 config=ResamplingConfig(),
-                **self.get_algo_config_dict(exclude=yaw_config_resampling),
+                **self.get_algo_config_dict(exclude=config_yaw_resampling),
             )
 
             ensemble = redshift_data_to_qp(nz_cc)

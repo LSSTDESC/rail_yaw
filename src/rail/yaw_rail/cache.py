@@ -35,7 +35,7 @@ __all__ = [
 ]
 
 
-yaw_config_columns = dict(
+config_yaw_columns = dict(
     ra_name=StageParameter(
         str,
         default="ra",
@@ -58,7 +58,7 @@ yaw_config_columns = dict(
     ),
 )
 
-yaw_config_patches = dict(
+config_yaw_patches = dict(
     patches=StageParameter(
         str,
         required=False,
@@ -477,8 +477,8 @@ class YawCacheCreate(
     YawRailStage,
     config_items=dict(
         **config_cache,
-        **yaw_config_columns,
-        **yaw_config_patches,
+        **config_yaw_columns,
+        **config_yaw_patches,
     ),
 ):
     """
