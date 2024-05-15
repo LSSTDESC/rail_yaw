@@ -1,14 +1,14 @@
 """
-This file implements a utility functions that automatically create
+This file implements utility functions that automatically create
 `ceci.config.StageParameter` instances from their corresponding parameter in
 *yet_another_wizz* by hooking into its integrated help system. Additionally,
-it provides a decorator for RAIL stages that automatically populates the
-stage configuration and building class doc-string.
+it provides a custom base class for `RailStages` that automates some of the
+stage properties and configuration definition.
 """
 
 from __future__ import annotations
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from collections.abc import Container
 from copy import copy
 from dataclasses import fields
@@ -30,7 +30,7 @@ __all__ = [
 
 
 def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
-    """Convert parameter metadata, embedded into the yet_another_wizz
+    """Convert parameter metadata, embedded into the *yet_another_wizz*
     configuration dataclasses, to a python dictionary."""
     for field in fields(config_cls):
         if field.name == parname:
@@ -44,10 +44,28 @@ def create_param(
     category: Literal["backend", "binning", "scales", "resampling"],
     parname: str,
 ) -> StageParameter:
-    """Hook into the yet_another_wizz parameter defaults and help system to
-    construct a StageParameter."""
+    """
+    Hook into the help system and defaults to construct a `StageParameter` from
+    a *yet_another_wizz* configuration parameter.
 
-    config_cls_name = category.capitalize() + "Config"
+    Parameters
+    ----------
+    category : str
+        Prefix of one of the *yet_another_wizz* configuration classes that
+        defines the parameter of interest, e.g. `"scales"` for
+        `yaw.config.ScalesConfig`.
+    parname : str
+        The name of the parameter of interest, e.g. `"rmin"` for
+        `yaw.config.ScalesConfig.rmin`.
+
+    Returns
+    -------
+    StageParameter
+        Parameter metadata including `dtype`, `default`, `required` and `msg`
+        values set.
+    """
+
+    config_cls_name = category.lower().capitalize() + "Config"
     metadata = get_yaw_config_meta(
         config_cls=getattr(config, config_cls_name),
         parname=parname,
@@ -65,38 +83,78 @@ def create_param(
 
 
 class YawRailStage(ABC, RailStage):
+    """
+    Base class for any `RailStage` used in this wrapper package.
+
+    It introduces a few quality-of-life improvements compared to the base
+    `RailStage` when creating a sub-class. These include:
+
+    - setting the `name` attribute automatically to the class name,
+    - copying the default `RailStage.config_options`,
+    - providing an interface to directly register a dictionary of algorithm-
+      specific configuration parameters, and
+    - automatically adding the `"verbose"` parameter to the stage, which
+      controlls the log-level filtering for the *yet_another_wizz* logger.
+
+    The names of all algorithm-specific parameters are tracked in the special
+    attribute `algo_parameters`. There is a special method to get a dictionary
+    of just those parameters.
+
+    Additionally, there are methods to set and retrieve (optional) stage inputs
+    that do not raise exceptions if the handle has not been assigned.
+
+    Examples
+    --------
+    Create a new stage with one algorithm specific parameter called `"param"`.
+    The resulting subclass will have the standard `RailStage` parameters and an
+    additional parameter `"verbose"`.
+
+    >>> class MyStage(
+    ...     YawRailStage,
+    ...     config_items=dict(
+    ...         param=StageParameter(dtype=int)
+    ...     ),
+    ... ):
+    """
+
     algo_parameters: set[str]
+    """Lists the names of all algorithm-specific parameters."""
 
-    def __init_subclass__(cls, config_items: dict[str, StageParameter] | None = None):
-        cls.name = cls.__name__
-        super().__init_subclass__()
-
-        cls.config_options = super().config_options.copy()
-
+    def __init_subclass__(
+        cls, config_items: dict[str, StageParameter] | None = None, **kwargs
+    ):
         if config_items is None:
             config_items = {}
         else:
             config_items = copy(config_items)
-        cls.config_options.update(config_items)
-        cls.algo_parameters = set(config_items.keys())
 
+        cls.name = cls.__name__
+        cls.algo_parameters = set(config_items.keys())
+        cls.config_options = super().config_options.copy()
+        cls.config_options.update(config_items)
         cls.config_options["verbose"] = config_verbose  # used for yaw logger
 
-        param_str = "Parameters\n    ----------\n"
-        param_template = "    {:} : {:} \n        {:}\n"
-        for name, param in config_items.items():
-            msg = param._help  # pylint: disable=W0212; PR filed in ceci
-            param_str += param_template.format(name, param.dtype.__name__, msg)
-        param_str += param_template.format(
-            "verbose",
-            config_verbose.dtype.__name__,
-            config_verbose._help,  # pylint: disable=W0212; PR filed in ceci
-        )
-        cls.__doc__ = cls.__doc__.replace("@YawParameters", param_str)
+        super().__init_subclass__(**kwargs)  # delegate back to rail/ceci
 
     def get_algo_config_dict(
         self, exclude: Container[str] | None = None
     ) -> dict[str, Any]:
+        """
+        Return the algorithm-specific configuration.
+
+        Same as `get_config_dict`, but only returns those parameters that are
+        listed in `algo_parameters`.
+
+        Parameters
+        ----------
+        exclude : Container of str, optional
+            Listing of parameters not to include in the output.
+
+        Returns
+        -------
+        dict
+            Dictionary containing pairs of parameter names and (default) values.
+        """
         if exclude is None:
             exclude = []
         return {
@@ -106,17 +164,63 @@ class YawRailStage(ABC, RailStage):
         }
 
     def get_optional_handle(self, tag: str, **kwarg) -> DataHandle | None:
+        """
+        Access a handle without raising a `KeyError` if it is not set.
+
+        Parameters
+        ----------
+        tag : str
+            The requested tag.
+        **kwargs : dict, optional
+            Parameters passed on to `get_handle`.
+
+        Returns
+        -------
+        DataHandle or None
+            The handle or nothing if not set.
+        """
         try:
             return self.get_handle(tag, allow_missing=False, **kwarg)
         except KeyError:
             return None
 
     def get_optional_data(self, tag: str, **kwarg) -> Any | None:
+        """
+        Access a handle's data without raising a `get_data` if it is not set.
+
+        Parameters
+        ----------
+        tag : str
+            The requested tag.
+        **kwargs : dict, optional
+            Parameters passed on to `get_data`.
+
+        Returns
+        -------
+        Any or None
+            The handle's data or nothing if not set.
+        """
         try:
             return self.get_data(tag, allow_missing=False, **kwarg)
         except KeyError:
             return None
 
     def set_optional_data(self, tag: str, value: Any | None, **kwarg) -> None:
+        """
+        Set a handle's data if the value is not None.
+
+        Parameters
+        ----------
+        tag : str
+            The requested tag.
+        value : Any or None
+            The data to assing to the handle unless `None` is provided.
+        **kwargs : dict, optional
+            Parameters passed on to `set_data`.
+        """
         if value is not None:
             self.set_data(tag, value, **kwarg)
+
+    @abstractmethod
+    def run(self) -> None:
+        pass  # pragma: no cover

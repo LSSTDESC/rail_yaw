@@ -52,6 +52,8 @@ yaw_config_resampling = {
 
 
 def clip_negative_values(nz: RedshiftData) -> RedshiftData:
+    """Replace all non-finite and negative values in a `yaw.RedshiftData`
+    instance with zeros."""
     data = np.nan_to_num(nz.data, nan=0.0, posinf=0.0, neginf=0.0)
     samples = np.nan_to_num(nz.samples, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -65,6 +67,8 @@ def clip_negative_values(nz: RedshiftData) -> RedshiftData:
 
 
 def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
+    """Convert a `yaw.RedshiftData` instance to a `qp.Ensemble` by clipping
+    negative values and normalising the spatial samples to PDFs."""
     nz_clipped = clip_negative_values(nz)
     nz_mids = nz_clipped.mids
 
@@ -76,6 +80,22 @@ def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
 
 
 class YawRedshiftDataHandle(DataHandle):
+    """
+    Class to act as a handle for a `yaw.RedshiftData` instance, associating
+    it with a file and providing tools to read & write it to that file.
+
+    Parameters
+    ----------
+    tag : str
+        The tag under which this data handle can be found in the store.
+    data : any or None
+        The associated data.
+    path : str or None
+        The path to the associated file.
+    creator : str or None
+        The name of the stage that created this data handle.
+    """
+
     data: RedshiftData
 
     @classmethod
@@ -103,17 +123,17 @@ class YawSummarize(
     ),
 ):
     """
-    Convert the clustering redshift estimate to an QP ensemble by clipping
-    negative values and substituting non-finite values.
+    A simple summarizer that computes a clustering redshift estimate from the
+    measured correlation amplitudes.
 
-    @YawParameters
+    Evaluates the cross-correlation pair counts with the provided estimator.
+    Additionally corrects for galaxy sample bias if autocorrelation measurements
+    are given.
 
-    Returns
-    -------
-    output: QPHandle
-        The final QP ensemble.
-    yaw_cc: YawRedshiftDataHandle
-        A yet_another_wizz RedshiftData container containing all output data.
+    .. warning::
+    This summarizer simply replaces all non-finite and negative values in the
+    clustering redshift estimate to produce PDFs. This may have significant
+    impacts on the recovered mean redshift.
     """
 
     inputs = [
@@ -136,7 +156,32 @@ class YawSummarize(
         cross_corr: CorrFunc,
         ref_corr: CorrFunc | None = None,
         unk_corr: CorrFunc | None = None,
-    ) -> dict:
+    ) -> dict[str, DataHandle]:
+        """
+        Compute a clustring redshift estimate and convert it to a PDF.
+
+        Parameters
+        ----------
+        cross_corr : CorrFunc
+            Pair counts from the cross-correlation measurement, basis for the
+            clustering redshift estimate.
+        ref_corr : CorrFunc, optional
+            Pair counts from the reference sample autocorrelation measurement,
+            used to correct for the reference sample galaxy bias.
+        unk_corr : CorrFunc, optional
+            Pair counts from the unknown sample autocorrelation measurement,
+            used to correct for the reference sample galaxy bias. Typically only
+            availble when using simulated data sets.
+
+        Returns
+        -------
+        dict
+            Dictionary with keys `"output"` and `"yaw_cc"`:
+            1. `QPHandle` containing PDFs of the estimated spatial samples.
+            2. `YawRedshiftDataHandle` wrapping the direct output of
+               *yet_another_wizz*; the clustering redshift estimate, spatial
+               samples thereof, and its covariance matrix.
+        """
         self.set_data("cross_corr", cross_corr)
         self.set_optional_data("ref_corr", ref_corr)
         self.set_optional_data("unk_corr", unk_corr)

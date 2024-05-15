@@ -1,3 +1,7 @@
+"""
+This module implements some simple utility functions.
+"""
+
 from __future__ import annotations
 
 from functools import lru_cache
@@ -15,4 +19,13 @@ __all__ = [
 
 @lru_cache
 def get_dc2_test_data() -> DataFrame:
+    """
+    Download a small dataset with positions and redshifts, derived from DC2.
+
+    Returns
+    -------
+    DataFrame
+        Table containing right ascension (`ra`), declination (`dec`) and
+        redshift (`z`).
+    """
     return read_parquet("https://portal.nersc.gov/cfs/lsst/PZ/test_dc2_rail_yaw.pqt")

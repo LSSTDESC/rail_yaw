@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -162,18 +161,37 @@ class TestYawCatalog:
 
 class TestYawCache:
     def test_init(self, tmp_path):
-        inst = cache.YawCache(tmp_path)
-        str(inst)
-
         with raises(FileNotFoundError):
             cache.YawCache(tmp_path / "not_existing")
 
+        # cache indicator file does not exist
+        with raises(FileNotFoundError):
+            cache.YawCache(tmp_path)
+
     def test_create(self, tmp_path):
         inst = cache.YawCache.create(tmp_path / "not_existing")
-        assert os.path.exists(inst.path)
+        assert cache.YawCache.is_valid(inst.path)
 
         with raises(FileExistsError):
             cache.YawCache.create(tmp_path)
+
+    def test_overwrite(self, tmp_path):
+        # create a cache with some file inside
+        path = tmp_path / "cache"
+        cache.YawCache.create(path)
+        dummy_path = tmp_path / "cache" / "dummy.file"
+        with open(dummy_path, "w"):
+            pass
+
+        # overwrite the directory
+        cache.YawCache.create(path, overwrite=True)
+        assert not dummy_path.exists()
+
+        # do not allow overwriting any normal directory
+        path = tmp_path / "my_precious_data"
+        path.mkdir()
+        with raises(OSError):
+            cache.YawCache.create(path, overwrite=True)
 
     def test_patch_centers(self, tmp_path, mock_data_indexed, column_kwargs):
         inst = cache.YawCache.create(tmp_path / "cache")
@@ -199,19 +217,11 @@ class TestYawCache:
         assert_array_equal(inst.rand.get().centers.ra, inst.data.get().centers.ra)
 
     def test_drop(self, tmp_path):
-        inst = cache.YawCache(tmp_path)
-        os.mkdir(inst.data.path)
-        os.mkdir(inst.rand.path)
-
-        # this should stop the cache directory from being deleted
-        extra_file = tmp_path / "extra_file"
-        with open(extra_file, "w"):
-            pass
-        with raises(OSError):
-            inst.drop()
-
-        os.unlink(extra_file)
+        path = tmp_path / "cache"
+        inst = cache.YawCache.create(path)
+        assert str(path) in str(inst)  # test __str__()
         inst.drop()
+        assert not path.exists()
 
 
 def test_TestYawCacheHandle(tmp_path):
