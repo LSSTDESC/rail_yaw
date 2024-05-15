@@ -81,6 +81,11 @@ config_cache = dict(
     path=StageParameter(
         str, required=True, msg="path to cache directory, must not exist"
     ),
+    overwrite=StageParameter(
+        bool,
+        required=False,
+        msg="overwrite the path if it is an existing cache directory",
+    ),
 )
 
 
@@ -209,16 +214,19 @@ class YawCache:
     in the yet_another_wizz catalog format.
     """
 
+    _flag_path = ".yaw_cache"  # file to a cache directory, safeguard for .drop()
     path: str
     data: YawCatalog
     rand: YawCatalog
 
     def __init__(self, path: str) -> None:
         """Open an existing cache directory at the specified path."""
-        normalised = normalise_path(path)
-        if not os.path.exists(normalised):
-            raise FileNotFoundError(normalised)
-        self.path = normalised
+        self.path = normalise_path(path)
+
+        if not os.path.exists(self.path):
+            raise FileNotFoundError(self.path)
+        if not self.is_valid(self.path):
+            raise FileNotFoundError(f"not a valid cache directory: {self.path}")
 
         self.data = YawCatalog(os.path.join(self.path, "data"))
         self.rand = YawCatalog(os.path.join(self.path, "rand"))
@@ -226,17 +234,31 @@ class YawCache:
         self.rand.set_patch_center_callback(self.data)
 
     @classmethod
-    def create(cls, path: str) -> YawCache:
+    def is_valid(cls, path: str) -> bool:
+        indicator_path = os.path.join(path, cls._flag_path)
+        return os.path.exists(indicator_path)
+
+    @classmethod
+    def create(cls, path: str, overwrite: bool = False) -> YawCache:
         """Create an empty cache directory at the specifed path."""
         normalised = normalise_path(path)
+
         if os.path.exists(normalised):
-            raise FileExistsError(normalised)
+            if not overwrite:
+                raise FileExistsError(normalised)
+            # check if path is valid cache directry and *only* then delete it
+            try:
+                cls(path).drop()
+            except FileNotFoundError as err:
+                raise OSError("can only overwrite existing cache directories") from err
 
         os.makedirs(normalised)
+        with open(os.path.join(normalised, cls._flag_path), "w"):
+            pass
         return cls(path)
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__} @ {self.path}"
+        return f"{self.__class__.__name__}(path='{self.path}')"
 
     def get_patch_centers(self) -> CoordSky:
         """Get the patch centers for a non-empty cache."""
@@ -252,16 +274,7 @@ class YawCache:
 
     def drop(self) -> None:
         """Delete the entire cache directy. Invalidates this instance."""
-        self.data.drop()
-        self.rand.drop()
-
-        try:
-            # safety: if any other data is present, something is wrong and we
-            # don't want to delete the cache root directory and all its contents
-            os.rmdir(self.path)
-        except OSError as err:
-            msg = "unaccounted cache directory contents, deletion failed"
-            raise OSError(msg) from err
+        shutil.rmtree(self.path)
 
 
 class YawCacheHandle(DataHandle):
@@ -335,7 +348,7 @@ class YawCacheCreate(
             else:
                 patch_centers = None
 
-            cache = YawCache.create(config["path"])
+            cache = YawCache.create(config["path"], overwrite=config["overwrite"])
 
             rand: TableHandle | None = self.get_optional_handle("rand")
             if rand is not None:
