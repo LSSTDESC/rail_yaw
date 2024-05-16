@@ -12,6 +12,7 @@ correlation amplitudes and setting them to zero.
 from __future__ import annotations
 
 import pickle
+from functools import partial
 from typing import TextIO
 
 import numpy as np
@@ -50,17 +51,17 @@ config_yaw_resampling = {
     for p in ("crosspatch",)
 }
 
+clip_neg = partial(np.maximum, 0.0)
+nan_inf_to_num = partial(np.nan_to_num, nan=0.0, posinf=0.0, neginf=0.0)
+
 
 def clip_negative_values(nz: RedshiftData) -> RedshiftData:
     """Replace all non-finite and negative values in a `yaw.RedshiftData`
     instance with zeros."""
-    data = np.nan_to_num(nz.data, nan=0.0, posinf=0.0, neginf=0.0)
-    samples = np.nan_to_num(nz.samples, nan=0.0, posinf=0.0, neginf=0.0)
-
     return RedshiftData(
         binning=nz.get_binning(),
-        data=np.maximum(data, 0.0),
-        samples=np.maximum(samples, 0.0),
+        data=clip_neg(nan_inf_to_num(nz.data)),
+        samples=clip_neg(nan_inf_to_num(nz.samples)),
         method=nz.method,
         info=nz.info,
     )
@@ -69,14 +70,10 @@ def clip_negative_values(nz: RedshiftData) -> RedshiftData:
 def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
     """Convert a `yaw.RedshiftData` instance to a `qp.Ensemble` by clipping
     negative values and normalising the spatial samples to PDFs."""
-    nz_clipped = clip_negative_values(nz)
-    nz_mids = nz_clipped.mids
-
-    samples = nz_clipped.samples.copy()
+    samples = clip_negative_values(nz).samples
     for i, sample in enumerate(samples):
-        samples[i] = sample / np.trapz(sample, x=nz_mids)
-
-    return qp.Ensemble(qp.hist, data=dict(bins=nz_clipped.edges, pdfs=samples))
+        samples[i] = sample / np.trapz(sample, x=nz.mids)
+    return qp.Ensemble(qp.hist, data=dict(bins=nz.edges, pdfs=samples))
 
 
 class YawRedshiftDataHandle(DataHandle):
@@ -202,7 +199,6 @@ class YawSummarize(
             config=ResamplingConfig(),
             **self.get_algo_config_dict(exclude=config_yaw_resampling),
         )
-
         ensemble = redshift_data_to_qp(nz_cc)
 
         self.add_data("output", ensemble)

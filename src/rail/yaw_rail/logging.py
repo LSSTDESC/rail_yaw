@@ -7,8 +7,8 @@ logging messages on stderr, which is used in RAIL stages that call
 from __future__ import annotations
 
 import logging
-import sys
 from functools import wraps
+from sys import stdout
 from typing import TYPE_CHECKING
 
 from ceci.stage import StageParameter
@@ -40,12 +40,12 @@ class OnlyYawFilter(logging.Filter):
 
 
 def init_logger(level: str = "info") -> logging.Logger:
-    """Init a logger that writes *yet_another_wizz* messages to stderr in a
+    """Init a logger that writes *yet_another_wizz* messages to stdout in a
     custom format."""
     level = getattr(logging, level.upper())
     formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
 
-    handler = logging.StreamHandler(sys.stdout)
+    handler = logging.StreamHandler(stdout)
     handler.setFormatter(formatter)
     handler.setLevel(level)
     handler.addFilter(OnlyYawFilter())
@@ -57,7 +57,7 @@ def init_logger(level: str = "info") -> logging.Logger:
 def yaw_logged(method):
     """
     Decorator that creates a temporary logger for a method of a `YawRailStage`
-    that redirects messages emitted by *yet_another_wizz* to stderr.
+    that redirects messages emitted by *yet_another_wizz* to stdout.
     """
 
     @wraps(method)

@@ -13,7 +13,8 @@ from __future__ import annotations
 
 import logging
 import os
-import shutil
+from itertools import chain
+from shutil import rmtree
 from typing import TYPE_CHECKING, Any, TextIO
 
 from yaw import NewCatalog
@@ -257,7 +258,7 @@ class YawCatalog:
         """
         if self.exists():
             if overwrite:
-                shutil.rmtree(self.path)
+                rmtree(self.path)
             else:
                 raise FileExistsError(self.path)
         os.makedirs(self.path)
@@ -305,7 +306,7 @@ class YawCatalog:
     def drop(self) -> None:
         """Delete the cached data from disk and unset the catalog instance."""
         if self.exists():
-            shutil.rmtree(self.path)
+            rmtree(self.path)
         self.catalog = None
 
 
@@ -435,7 +436,7 @@ class YawCache:
     def drop(self) -> None:
         """Delete the entire cache directy."""
         logger.info("dropping cache directory '%s'", self.path)
-        shutil.rmtree(self.path)
+        rmtree(self.path)
 
 
 class YawCacheHandle(DataHandle):
@@ -584,10 +585,9 @@ def stage_helper(suffix: str) -> dict[str, Any]:
     dict
         Mapping from original to aliased in- and output tags.
     """
-    keys = []
-    keys.extend(key for key, _ in YawCacheCreate.inputs)
-    keys.extend(key for key, _ in YawCacheCreate.outputs)
-    return {key: f"{key}_{suffix}" for key in keys}
+    keys_in = (key for key, _ in YawCacheCreate.inputs)
+    keys_out = (key for key, _ in YawCacheCreate.outputs)
+    return {key: f"{key}_{suffix}" for key in chain(keys_in, keys_out)}
 
 
 class YawCacheDrop(YawRailStage):

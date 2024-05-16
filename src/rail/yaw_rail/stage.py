@@ -64,14 +64,14 @@ def create_param(
         Parameter metadata including `dtype`, `default`, `required` and `msg`
         values set.
     """
+    category = category.lower().capitalize()
 
-    config_cls_name = category.lower().capitalize() + "Config"
     metadata = get_yaw_config_meta(
-        config_cls=getattr(config, config_cls_name),
+        config_cls=getattr(config, f"{category}Config"),
         parname=parname,
     )
 
-    config_default = getattr(config.DEFAULT, category.capitalize())
+    config_default = getattr(config.DEFAULT, category)
     default = getattr(config_default, parname, None)
 
     return StageParameter(
