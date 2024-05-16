@@ -160,7 +160,7 @@ class YawRailStage(ABC, RailStage):
         return {
             key: param
             for key, param in self.get_config_dict(reduce_config=True).items()
-            if key in self.algo_parameters and key not in exclude
+            if (key in self.algo_parameters) and (key not in exclude)
         }
 
     def get_optional_handle(self, tag: str, **kwarg) -> DataHandle | None:

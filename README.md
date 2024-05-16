@@ -1,8 +1,9 @@
 ![alt text](https://raw.githubusercontent.com/jlvdb/yet_another_wizz/main/docs/source/_static/logo-dark.png)
 
-[![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
-[![codecov](https://codecov.io/gh/LSSTDESC/rail_yaw/graph/badge.svg?token=BsmWz2v0qL)](https://codecov.io/gh/LSSTDESC/rail_yaw)
 [![PyPI](https://img.shields.io/pypi/v/yaw_rail?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/yaw_rail/)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/LSSTDESC/rail_yaw/smoke-test.yml)](https://github.com/LSSTDESC/rail_yaw/actions/workflows/smoke-test.yml)
+[![codecov](https://codecov.io/gh/LSSTDESC/rail_yaw/graph/badge.svg?token=BsmWz2v0qL)](https://codecov.io/gh/LSSTDESC/rail_yaw)
+[![Template](https://img.shields.io/badge/Template-LINCC%20Frameworks%20Python%20Project%20Template-brightgreen)](https://lincc-ppt.readthedocs.io/en/latest/)
 
 # pz-rail-yaw
 

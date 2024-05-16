@@ -1,6 +1,6 @@
 """
 This file implements a context wrapper that allows displaying *yet_another_wizz*
-logging messages on stderr, which is used in RAIL stages that call
+logging messages on stdout, which is used in RAIL stages that call
 *yet_another_wizz* code.
 """
 
