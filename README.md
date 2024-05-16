@@ -1,4 +1,4 @@
-![alt text](https://raw.githubusercontent.com/jlvdb/yet_another_wizz/main/docs/source/_static/logo-dark.png)
+![yet_another_wizz](https://raw.githubusercontent.com/jlvdb/yet_another_wizz/main/docs/source/_static/logo-dark.png)
 
 [![PyPI](https://img.shields.io/pypi/v/yaw_rail?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/yaw_rail/)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/LSSTDESC/rail_yaw/smoke-test.yml)](https://github.com/LSSTDESC/rail_yaw/actions/workflows/smoke-test.yml)
@@ -18,31 +18,34 @@ integrate the clustering redshift code *yet_another_wizz*:
 
 ## About this wrapper
 
-The current wrapper implements the basic functionality of yet_another_wizz,
-which is an external dependency for this package. Additional (unit) tests are
-required to verify full functionality.
+The current wrapper implements most of the functionality of *yet_another_wizz*,
+which is an external dependency for this package. The wrapper currently
+implements five different stages and three custom data handles:
 
-The wrapper currently implements five different stages and three custom data
-handles:
-
-- A cache directory, of which each stores a data set and its corresponding
-  random points. Both catalogs are split into spatial patches which are used for
+- A cache directory, which stores a data set and its corresponding random
+  points. Both catalogs are split into spatial patches which are used for the
   covariance estimation. The cache directory is created and destroyed with two
   dedicated stages.
-- A handle for yet_another_wizz pair count data (stored as HDF5 file), which are
-  created as outputs of the cross- and autocorrelation stages.
-- A handle for yet_another_wizz clustering redshift estimates (stored as python
-  pickle), which is created by the final estimator stage.
-
-The final stage does produce a qp ensemble as expected, but does so by setting
-all negative correlation amplitudes in all generated (spatial) samples to zero.
-This needs refinement in a future release, for now it is advised to use the raw
-clutering redshift estimate from yet_another_wizz.
+- A handle for *yet_another_wizz* pair count data (stored as HDF5 file), which
+  are created as outputs of the cross- and autocorrelation stages.
+- A handle for *yet_another_wizz* clustering redshift estimates (stored as
+  python pickle file), which is created by the final estimator summary stage.
 
 A jupyter notebook containing a full example with more detailed descriptions is
 included in
 
-> examples/full_example.ipynb
+    examples/full_example.ipynb
+
+### Note
+
+The summary stage produces a `qp.Ensemble`, but does so by simply setting all
+negative correlation amplitudes in all generated (spatial) samples to zero.
+This needs refinement in a future release. For now it is advised to use the
+second output of the summary stage, which is the raw clutering redshift estimate
+from *yet_another_wizz* (`yaw.RedshiftData`).
+
+![rail_yaw_network](https://raw.githubusercontent.com/jlvdb/yet_another_wizz/main/examples/rail_yaw_network.png)
+
 
 ## RAIL: Redshift Assessment Infrastructure Layers
 
@@ -68,6 +71,5 @@ posting of the work to the arXiv.
 
 If you use this package, you should also cite the appropriate papers for each
 code used.  A list of such codes is included in the 
-[Citing RAIL](https://lsstdescrail.readthedocs.io/en/stable/source/citing.html)
+[Citing RAIL](https://rail-hub.readthedocs.io/en/latest/source/citing.html)
 section of the main RAIL Read The Docs page.
-
