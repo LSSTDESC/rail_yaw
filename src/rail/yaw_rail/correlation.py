@@ -90,9 +90,7 @@ class YawBaseCorrelate(YawRailStage):
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        self.yaw_config = Configuration.create(
-            **self.get_algo_config_dict(exclude=["verbose"]),
-        )
+        self.yaw_config = Configuration.create(**self.get_algo_config_dict())
 
     @abstractmethod
     def correlate(self, *inputs: YawCache) -> YawCorrFuncHandle:
