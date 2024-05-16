@@ -84,7 +84,9 @@ class TestYawCatalog:
         assert inst.catalog is None
         assert not inst.exists()
 
-    def test_patch_center_callback(self, tmp_path, column_kwargs, mock_data_indexed):
+    def test_patch_center_callback(
+        self, tmp_path, column_kwargs, mock_data_indexed
+    ):  # pylint: disable=W0212
         ref = cache.YawCatalog(tmp_path / "ref")
         ref.set(mock_data_indexed, **column_kwargs, n_patches=2)
 
@@ -92,13 +94,20 @@ class TestYawCatalog:
         inst = cache.YawCatalog(tmp_path / "cat")
         inst.set_patch_center_callback(ref)
         assert_array_equal(
-            inst._patch_center_callback().ra,  # pylint: disable=W0212
+            inst._patch_center_callback().ra,
             ref.get().centers.ra,
         )
         assert_array_equal(
-            inst._patch_center_callback().dec,  # pylint: disable=W0212
+            inst._patch_center_callback().dec,
             ref.get().centers.dec,
         )
+
+        # set callback
+        inst.set_patch_center_callback(None)
+        assert inst._patch_center_callback is None
+
+        with raises(TypeError):
+            inst.set_patch_center_callback("wrong type")
 
     def test_set_errors(self, tmp_path, column_kwargs, mock_data_indexed):
         inst = cache.YawCatalog(tmp_path / "cat")

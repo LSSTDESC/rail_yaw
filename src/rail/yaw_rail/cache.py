@@ -11,8 +11,10 @@ between RAIL stages to define inputs for the correlation function stages.
 
 from __future__ import annotations
 
+import logging
 import os
-import shutil
+from itertools import chain
+from shutil import rmtree
 from typing import TYPE_CHECKING, Any, TextIO
 
 from yaw import NewCatalog
@@ -35,7 +37,9 @@ __all__ = [
 ]
 
 
-yaw_config_columns = dict(
+logger = logging.getLogger(__name__)
+
+config_yaw_columns = dict(
     ra_name=StageParameter(
         str,
         default="ra",
@@ -58,7 +62,7 @@ yaw_config_columns = dict(
     ),
 )
 
-yaw_config_patches = dict(
+config_yaw_patches = dict(
     patches=StageParameter(
         str,
         required=False,
@@ -154,7 +158,7 @@ class YawCatalog:
         self.catalog = None
         self._patch_center_callback = None
 
-    def set_patch_center_callback(self, cat: YawCatalog) -> None:
+    def set_patch_center_callback(self, cat: YawCatalog | None) -> None:
         """
         Register a different `YawCatalog` instance that defines the patch
         centers to use.
@@ -166,12 +170,16 @@ class YawCatalog:
 
         Parameters
         ----------
-        cat : YawCatalog
+        cat : YawCatalog or None
             The catalog instance that acts are reference for the patch centers.
+            If `None`, removes the callback.
         """
-        if not isinstance(cat, YawCatalog):
+        if cat is None:
+            self._patch_center_callback = None
+        elif isinstance(cat, YawCatalog):
+            self._patch_center_callback = lambda: cat.get().centers
+        else:
             raise TypeError("referenced catalog is not a 'YawCatalog'")
-        self._patch_center_callback = lambda: cat.get().centers
 
     def exists(self) -> bool:
         """Whether the catalog's cache directory exists."""
@@ -250,7 +258,7 @@ class YawCatalog:
         """
         if self.exists():
             if overwrite:
-                shutil.rmtree(self.path)
+                rmtree(self.path)
             else:
                 raise FileExistsError(self.path)
         os.makedirs(self.path)
@@ -298,7 +306,7 @@ class YawCatalog:
     def drop(self) -> None:
         """Delete the cached data from disk and unset the catalog instance."""
         if self.exists():
-            shutil.rmtree(self.path)
+            rmtree(self.path)
         self.catalog = None
 
 
@@ -379,6 +387,7 @@ class YawCache:
             except FileNotFoundError as err:
                 raise OSError("can only overwrite existing cache directories") from err
 
+        logger.info("creating new cache directory '%s'", normalised)
         os.makedirs(normalised)
         with open(os.path.join(normalised, cls._flag_path), "w"):
             pass
@@ -426,7 +435,8 @@ class YawCache:
 
     def drop(self) -> None:
         """Delete the entire cache directy."""
-        shutil.rmtree(self.path)
+        logger.info("dropping cache directory '%s'", self.path)
+        rmtree(self.path)
 
 
 class YawCacheHandle(DataHandle):
@@ -473,8 +483,8 @@ class YawCacheCreate(
     YawRailStage,
     config_items=dict(
         **config_cache,
-        **yaw_config_columns,
-        **yaw_config_patches,
+        **config_yaw_columns,
+        **config_yaw_patches,
     ),
 ):
     """
@@ -529,31 +539,31 @@ class YawCacheCreate(
         self.run()
         return self.get_handle("cache")
 
+    @yaw_logged
     def run(self) -> None:
         config = self.get_config_dict()
 
-        with yaw_logged(config["verbose"]):
-            if config["patches"] is not None:
-                patch_centers = YawCache(config["patches"]).get_patch_centers()
-            else:
-                patch_centers = None
+        if config["patches"] is not None:
+            patch_centers = YawCache(config["patches"]).get_patch_centers()
+        else:
+            patch_centers = None
 
-            cache = YawCache.create(config["path"], overwrite=config["overwrite"])
+        cache = YawCache.create(config["path"], overwrite=config["overwrite"])
 
-            rand: TableHandle | None = self.get_optional_handle("rand")
-            if rand is not None:
-                cache.rand.set(
-                    source=rand.path if handle_has_path(rand) else rand.read(),
-                    patch_centers=patch_centers,
-                    **self.get_algo_config_dict(),
-                )
-
-            data: TableHandle = self.get_handle("data")
-            cache.data.set(
-                source=data.path if handle_has_path(data) else data.read(),
+        rand: TableHandle | None = self.get_optional_handle("rand")
+        if rand is not None:
+            cache.rand.set(
+                source=rand.path if handle_has_path(rand) else rand.read(),
                 patch_centers=patch_centers,
                 **self.get_algo_config_dict(),
             )
+
+        data: TableHandle = self.get_handle("data")
+        cache.data.set(
+            source=data.path if handle_has_path(data) else data.read(),
+            patch_centers=patch_centers,
+            **self.get_algo_config_dict(),
+        )
 
         self.add_data("cache", cache)
 
@@ -575,10 +585,9 @@ def stage_helper(suffix: str) -> dict[str, Any]:
     dict
         Mapping from original to aliased in- and output tags.
     """
-    keys = []
-    keys.extend(key for key, _ in YawCacheCreate.inputs)
-    keys.extend(key for key, _ in YawCacheCreate.outputs)
-    return {key: f"{key}_{suffix}" for key in keys}
+    keys_in = (key for key, _ in YawCacheCreate.inputs)
+    keys_out = (key for key, _ in YawCacheCreate.outputs)
+    return {key: f"{key}_{suffix}" for key in chain(keys_in, keys_out)}
 
 
 class YawCacheDrop(YawRailStage):

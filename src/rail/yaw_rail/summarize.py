@@ -12,6 +12,7 @@ correlation amplitudes and setting them to zero.
 from __future__ import annotations
 
 import pickle
+from functools import partial
 from typing import TextIO
 
 import numpy as np
@@ -30,19 +31,19 @@ __all__ = [
 ]
 
 
-key_to_cf_name = dict(
+_key_to_cf_name = dict(
     cross="cross-correlation",
     ref="reference sample autocorrelation",
     unk="unknown sample autocorrelation",
 )
 
-yaw_config_est = {
+config_yaw_est = {
     f"{key}_est": StageParameter(
         dtype=str, required=False, msg=f"Correlation estimator to use for {name}"
     )
-    for key, name in key_to_cf_name.items()
+    for key, name in _key_to_cf_name.items()
 }
-yaw_config_resampling = {
+config_yaw_resampling = {
     # resampling method: "method" (currently only "jackknife")
     # bootstrapping (not implemented in yet_another_wizz): "n_boot", "seed"
     # omitted: "global_norm"
@@ -50,17 +51,17 @@ yaw_config_resampling = {
     for p in ("crosspatch",)
 }
 
+clip_neg = partial(np.maximum, 0.0)
+nan_inf_to_num = partial(np.nan_to_num, nan=0.0, posinf=0.0, neginf=0.0)
+
 
 def clip_negative_values(nz: RedshiftData) -> RedshiftData:
     """Replace all non-finite and negative values in a `yaw.RedshiftData`
     instance with zeros."""
-    data = np.nan_to_num(nz.data, nan=0.0, posinf=0.0, neginf=0.0)
-    samples = np.nan_to_num(nz.samples, nan=0.0, posinf=0.0, neginf=0.0)
-
     return RedshiftData(
         binning=nz.get_binning(),
-        data=np.maximum(data, 0.0),
-        samples=np.maximum(samples, 0.0),
+        data=clip_neg(nan_inf_to_num(nz.data)),
+        samples=clip_neg(nan_inf_to_num(nz.samples)),
         method=nz.method,
         info=nz.info,
     )
@@ -69,14 +70,10 @@ def clip_negative_values(nz: RedshiftData) -> RedshiftData:
 def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
     """Convert a `yaw.RedshiftData` instance to a `qp.Ensemble` by clipping
     negative values and normalising the spatial samples to PDFs."""
-    nz_clipped = clip_negative_values(nz)
-    nz_mids = nz_clipped.mids
-
-    samples = nz_clipped.samples.copy()
+    samples = clip_negative_values(nz).samples
     for i, sample in enumerate(samples):
-        samples[i] = sample / np.trapz(sample, x=nz_mids)
-
-    return qp.Ensemble(qp.hist, data=dict(bins=nz_clipped.edges, pdfs=samples))
+        samples[i] = sample / np.trapz(sample, x=nz.mids)
+    return qp.Ensemble(qp.hist, data=dict(bins=nz.edges, pdfs=samples))
 
 
 class YawRedshiftDataHandle(DataHandle):
@@ -110,7 +107,7 @@ class YawRedshiftDataHandle(DataHandle):
 
     @classmethod
     def _write(cls, data: RedshiftData, path: str, **kwargs) -> None:
-        # cannot use native I/O methods because the produce multiple files
+        # cannot use native yaw I/O methods because they produce multiple files
         with open(path, mode="wb") as f:
             pickle.dump(data, f)
 
@@ -118,8 +115,8 @@ class YawRedshiftDataHandle(DataHandle):
 class YawSummarize(
     YawRailStage,
     config_items=dict(
-        **yaw_config_est,
-        **yaw_config_resampling,
+        **config_yaw_est,
+        **config_yaw_resampling,
     ),
 ):
     """
@@ -148,7 +145,7 @@ class YawSummarize(
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        config = {p: self.config_options[p].value for p in yaw_config_resampling}
+        config = {p: self.config_options[p].value for p in config_yaw_resampling}
         self.yaw_config = ResamplingConfig.create(**config)
 
     def summarize(
@@ -189,23 +186,20 @@ class YawSummarize(
         self.run()
         return {name: self.get_handle(name) for name, _ in self.outputs}
 
+    @yaw_logged
     def run(self) -> None:
-        config = self.get_config_dict()
+        cross_corr: CorrFunc = self.get_data("cross_corr")
+        ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
+        unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
 
-        with yaw_logged(config["verbose"]):
-            cross_corr: CorrFunc = self.get_data("cross_corr")
-            ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
-            unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
-
-            nz_cc = RedshiftData.from_corrfuncs(
-                cross_corr=cross_corr,
-                ref_corr=ref_corr,
-                unk_corr=unk_corr,
-                config=ResamplingConfig(),
-                **self.get_algo_config_dict(exclude=yaw_config_resampling),
-            )
-
-            ensemble = redshift_data_to_qp(nz_cc)
+        nz_cc = RedshiftData.from_corrfuncs(
+            cross_corr=cross_corr,
+            ref_corr=ref_corr,
+            unk_corr=unk_corr,
+            config=ResamplingConfig(),
+            **self.get_algo_config_dict(exclude=config_yaw_resampling),
+        )
+        ensemble = redshift_data_to_qp(nz_cc)
 
         self.add_data("output", ensemble)
         self.add_data("yaw_cc", nz_cc)

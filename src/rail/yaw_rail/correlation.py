@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import warnings
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import h5py
 from yaw import Configuration, CorrFunc, autocorrelate, crosscorrelate
@@ -23,6 +23,7 @@ from rail.yaw_rail.stage import YawRailStage, create_param
 
 if TYPE_CHECKING:  # pragma: no cover
     from rail.yaw_rail.cache import YawCache
+    from yaw.catalogs.scipy import ScipyCatalog
 
 __all__ = [
     "YawAutoCorrelate",
@@ -31,18 +32,18 @@ __all__ = [
 ]
 
 
-yaw_config_scales = {
+config_yaw_scales = {
     p: create_param("scales", p) for p in ("rmin", "rmax", "rweight", "rbin_num")
 }
-yaw_config_zbins = {
+config_yaw_zbins = {
     p: create_param("binning", p)
     for p in ("zmin", "zmax", "zbin_num", "method", "zbins")
 }
-yaw_config_backend = {p: create_param("backend", p) for p in ("crosspatch",)}
+config_yaw_backend = {p: create_param("backend", p) for p in ("crosspatch",)}
 # Since the current implementation does not support MPI, we need to implement
 # the number of threads manually. The code uses multiprocessing and can only
 # run on a single machine.
-yaw_config_backend["thread_num"] = StageParameter(
+config_yaw_backend["thread_num"] = StageParameter(
     int,
     required=False,
     msg="the number of threads to use by the multiprocessing backend (single machine, MPI not yet supported)",
@@ -101,9 +102,9 @@ class YawBaseCorrelate(YawRailStage):
 class YawAutoCorrelate(
     YawBaseCorrelate,
     config_items=dict(
-        **yaw_config_scales,
-        **yaw_config_zbins,
-        **yaw_config_backend,
+        **config_yaw_scales,
+        **config_yaw_zbins,
+        **config_yaw_backend,
     ),
 ):
     """
@@ -142,22 +143,20 @@ class YawAutoCorrelate(
         self.run()
         return self.get_handle("autocorr")
 
+    @yaw_logged
     def run(self) -> None:
-        config = self.get_config_dict()
+        cache_sample: YawCache = self.get_data("sample")
+        data = cache_sample.data.get()
+        rand = cache_sample.rand.get()
 
-        with yaw_logged(config["verbose"]):
-            cache_sample: YawCache = self.get_data("sample")
-            data = cache_sample.data.get()
-            rand = cache_sample.rand.get()
-
-            with warnings.catch_warnings():
-                warnings.simplefilter(action="ignore", category=FutureWarning)
-                corr = autocorrelate(
-                    config=self.yaw_config,
-                    data=data,
-                    random=rand,
-                    compute_rr=True,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore", category=FutureWarning)
+            corr = autocorrelate(
+                config=self.yaw_config,
+                data=data,
+                random=rand,
+                compute_rr=True,
+            )
 
         self.add_data("autocorr", corr)
 
@@ -165,9 +164,9 @@ class YawAutoCorrelate(
 class YawCrossCorrelate(
     YawBaseCorrelate,
     config_items=dict(
-        **yaw_config_scales,
-        **yaw_config_zbins,
-        **yaw_config_backend,
+        **config_yaw_scales,
+        **config_yaw_zbins,
+        **config_yaw_backend,
     ),
 ):
     """
@@ -214,29 +213,33 @@ class YawCrossCorrelate(
         self.run()
         return self.get_handle("crosscorr")
 
+    def _get_catalogs(
+        self,
+        tag: Literal["reference", "unknown"],
+    ) -> tuple[ScipyCatalog, ScipyCatalog | None]:
+        """Get the catalog(s) from the given input cache handle"""
+        cache: YawCache = self.get_data(tag)
+        data = cache.data.get()
+        try:
+            return data, cache.rand.get()
+        except FileNotFoundError:
+            return data, None
+
+    @yaw_logged
     def run(self) -> None:
-        config = self.get_config_dict()
+        data_ref, rand_ref = self._get_catalogs("reference")
+        data_unk, rand_unk = self._get_catalogs("unknown")
+        if rand_ref is None and rand_unk is None:
+            raise ValueError("no randoms provided")  # pragma: no cover
 
-        with yaw_logged(config["verbose"]):
-            cache_ref: YawCache = self.get_data("reference")
-            data_ref = cache_ref.data.get()
-            rand_ref = cache_ref.rand.get()
-
-            cache_unk: YawCache = self.get_data("unknown")
-            data_unk = cache_unk.data.get()
-            try:
-                rand_unk = cache_unk.rand.get()
-            except FileNotFoundError:
-                rand_unk = None
-
-            with warnings.catch_warnings():
-                warnings.simplefilter(action="ignore", category=FutureWarning)
-                corr = crosscorrelate(
-                    config=self.yaw_config,
-                    reference=data_ref,
-                    unknown=data_unk,
-                    ref_rand=rand_ref,
-                    unk_rand=rand_unk,
-                )
+        with warnings.catch_warnings():
+            warnings.simplefilter(action="ignore", category=FutureWarning)
+            corr = crosscorrelate(
+                config=self.yaw_config,
+                reference=data_ref,
+                unknown=data_unk,
+                ref_rand=rand_ref,
+                unk_rand=rand_unk,
+            )
 
         self.add_data("crosscorr", corr)

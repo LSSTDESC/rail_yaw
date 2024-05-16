@@ -18,7 +18,7 @@ from yaw import config
 
 from ceci.config import StageParameter
 from rail.core.stage import RailStage
-from rail.yaw_rail.logging import config_verbose
+from rail.yaw_rail.logging import config_yaw_verbose
 
 if TYPE_CHECKING:  # pragma: no cover
     from rail.core.data import DataHandle
@@ -64,14 +64,14 @@ def create_param(
         Parameter metadata including `dtype`, `default`, `required` and `msg`
         values set.
     """
+    category = category.lower().capitalize()
 
-    config_cls_name = category.lower().capitalize() + "Config"
     metadata = get_yaw_config_meta(
-        config_cls=getattr(config, config_cls_name),
+        config_cls=getattr(config, f"{category}Config"),
         parname=parname,
     )
 
-    config_default = getattr(config.DEFAULT, category.capitalize())
+    config_default = getattr(config.DEFAULT, category)
     default = getattr(config_default, parname, None)
 
     return StageParameter(
@@ -132,7 +132,7 @@ class YawRailStage(ABC, RailStage):
         cls.algo_parameters = set(config_items.keys())
         cls.config_options = super().config_options.copy()
         cls.config_options.update(config_items)
-        cls.config_options["verbose"] = config_verbose  # used for yaw logger
+        cls.config_options["verbose"] = config_yaw_verbose  # used for yaw logger
 
         super().__init_subclass__(**kwargs)  # delegate back to rail/ceci
 
@@ -186,7 +186,7 @@ class YawRailStage(ABC, RailStage):
 
     def get_optional_data(self, tag: str, **kwarg) -> Any | None:
         """
-        Access a handle's data without raising a `get_data` if it is not set.
+        Access a handle's data without raising a `KeyError` if it is not set.
 
         Parameters
         ----------
