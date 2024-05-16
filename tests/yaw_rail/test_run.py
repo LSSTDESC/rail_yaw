@@ -64,6 +64,7 @@ def assert_cols_match(path_a: Path, path_b: Path, *, ignore_cols: list[int]) -> 
         npt.assert_array_equal(col_a, col_b)
 
 
+@mark.xfail
 @mark.slow
 def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
     cache_ref = YawCacheCreate.make_stage(

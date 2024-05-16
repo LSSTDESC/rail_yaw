@@ -180,8 +180,10 @@ class YawSummarize(
                samples thereof, and its covariance matrix.
         """
         self.set_data("cross_corr", cross_corr)
-        self.set_optional_data("ref_corr", ref_corr)
-        self.set_optional_data("unk_corr", unk_corr)
+        if ref_corr is not None:
+            self.set_data("ref_corr", ref_corr)
+        if unk_corr is not None:
+            self.set_data("unk_corr", unk_corr)
 
         self.run()
         return {name: self.get_handle(name) for name, _ in self.outputs}
@@ -189,8 +191,8 @@ class YawSummarize(
     @yaw_logged
     def run(self) -> None:
         cross_corr: CorrFunc = self.get_data("cross_corr")
-        ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
-        unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
+        ref_corr: CorrFunc | None = self.get_data("ref_corr", allow_missing=True)
+        unk_corr: CorrFunc | None = self.get_data("unk_corr", allow_missing=True)
 
         nz_cc = RedshiftData.from_corrfuncs(
             cross_corr=cross_corr,

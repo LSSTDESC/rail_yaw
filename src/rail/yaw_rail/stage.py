@@ -163,64 +163,6 @@ class YawRailStage(ABC, RailStage):
             if (key in self.algo_parameters) and (key not in exclude)
         }
 
-    def get_optional_handle(self, tag: str, **kwarg) -> DataHandle | None:
-        """
-        Access a handle without raising a `KeyError` if it is not set.
-
-        Parameters
-        ----------
-        tag : str
-            The requested tag.
-        **kwargs : dict, optional
-            Parameters passed on to `get_handle`.
-
-        Returns
-        -------
-        DataHandle or None
-            The handle or nothing if not set.
-        """
-        try:
-            return self.get_handle(tag, allow_missing=False, **kwarg)
-        except KeyError:
-            return None
-
-    def get_optional_data(self, tag: str, **kwarg) -> Any | None:
-        """
-        Access a handle's data without raising a `KeyError` if it is not set.
-
-        Parameters
-        ----------
-        tag : str
-            The requested tag.
-        **kwargs : dict, optional
-            Parameters passed on to `get_data`.
-
-        Returns
-        -------
-        Any or None
-            The handle's data or nothing if not set.
-        """
-        try:
-            return self.get_data(tag, allow_missing=False, **kwarg)
-        except KeyError:
-            return None
-
-    def set_optional_data(self, tag: str, value: Any | None, **kwarg) -> None:
-        """
-        Set a handle's data if the value is not None.
-
-        Parameters
-        ----------
-        tag : str
-            The requested tag.
-        value : Any or None
-            The data to assing to the handle unless `None` is provided.
-        **kwargs : dict, optional
-            Parameters passed on to `set_data`.
-        """
-        if value is not None:
-            self.set_data(tag, value, **kwarg)
-
     @abstractmethod
     def run(self) -> None:
         pass  # pragma: no cover

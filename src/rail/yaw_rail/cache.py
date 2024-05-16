@@ -534,7 +534,8 @@ class YawCacheCreate(
             A handle for the newly created cache directory.
         """
         self.set_data("data", data)
-        self.set_optional_data("rand", rand)
+        if rand is not None:
+            self.set_data("rand", rand)
 
         self.run()
         return self.get_handle("cache")
@@ -550,7 +551,7 @@ class YawCacheCreate(
 
         cache = YawCache.create(config["path"], overwrite=config["overwrite"])
 
-        rand: TableHandle | None = self.get_optional_handle("rand")
+        rand: TableHandle | None = self.get_handle("rand", allow_missing=True)
         if rand is not None:
             cache.rand.set(
                 source=rand.path if handle_has_path(rand) else rand.read(),
