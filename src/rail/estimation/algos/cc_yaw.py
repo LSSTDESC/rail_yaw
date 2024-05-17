@@ -37,12 +37,12 @@ if TYPE_CHECKING:  # pragma: no cover
     from yaw.catalogs.scipy import ScipyCatalog
 
 
-def stage_helper(suffix: str) -> dict[str, Any]:
+def create_yaw_cache_alias(suffix: str) -> dict[str, Any]:
     """
     Create an alias mapping for all `YawCacheCreate` stage in- and outputs.
 
     Useful when creating a new stage with `make_stage`, e.g. by setting
-    `aliases=stage_helper("suffix")`.
+    `aliases=create_yaw_cache_alias("suffix")`.
 
     Parameters
     ----------

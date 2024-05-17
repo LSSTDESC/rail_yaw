@@ -7,7 +7,7 @@ import numpy.testing as npt
 from pytest import mark
 
 from rail.estimation.algos.cc_yaw import (
-    stage_helper,
+    create_yaw_cache_alias,
     YawAutoCorrelate,
     YawCacheCreate,
     YawCacheDrop,
@@ -16,9 +16,9 @@ from rail.estimation.algos.cc_yaw import (
 )
 
 
-def test_stage_helper():
+def test_create_yaw_cache_alias():
     name = "test"
-    aliases = stage_helper(name)
+    aliases = create_yaw_cache_alias(name)
     assert all(alias == f"{key}_{name}" for key, alias in aliases.items())
 
 
@@ -74,7 +74,7 @@ def assert_cols_match(path_a: Path, path_b: Path, *, ignore_cols: list[int]) -> 
 def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
     cache_ref = YawCacheCreate.make_stage(
         name="ref",
-        aliases=stage_helper("ref"),
+        aliases=create_yaw_cache_alias("ref"),
         path=f"{tmp_path}/test_ref",
         ra_name="ra",
         dec_name="dec",
@@ -86,7 +86,7 @@ def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
 
     cache_unk = YawCacheCreate.make_stage(
         name="unk",
-        aliases=stage_helper("unk"),
+        aliases=create_yaw_cache_alias("unk"),
         path=f"{tmp_path}/test_unk",
         ra_name="ra",
         dec_name="dec",
