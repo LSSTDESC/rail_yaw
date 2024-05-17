@@ -31,7 +31,7 @@ from rail.yaw_rail.utils import handle_has_path
 from rail.yaw_rail.logging import yaw_logged
 from rail.yaw_rail.stage import YawRailStage
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from pandas import DataFrame
     from yaw import CorrFunc
     from yaw.catalogs.scipy import ScipyCatalog
