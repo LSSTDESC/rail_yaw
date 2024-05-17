@@ -1,7 +1,7 @@
 config: pipeline_config.yml
 inputs:
   input_data: dummy.in
-  input_random: dummy.in
+  input_rand: dummy.in
   rand_unk: /dev/null
   unk_corr: /dev/null
 log_dir: .
@@ -10,33 +10,32 @@ output_dir: .
 resume: false
 site:
   max_threads: 2
-  name: local
 stages:
 - classname: YawCacheCreate
-  module_name: rail.yaw_rail.cache
-  name: ref
+  module_name: rail.estimation.algos.cc_yaw
+  name: cache_ref
   nprocess: 1
 - classname: YawCacheCreate
-  module_name: rail.yaw_rail.cache
-  name: unk
+  module_name: rail.estimation.algos.cc_yaw
+  name: cache_unk
   nprocess: 1
 - classname: YawAutoCorrelate
-  module_name: rail.yaw_rail.correlation
-  name: corr_ss
+  module_name: rail.estimation.algos.cc_yaw
+  name: autocorr
   nprocess: 1
 - classname: YawCrossCorrelate
-  module_name: rail.yaw_rail.correlation
-  name: corr_sp
+  module_name: rail.estimation.algos.cc_yaw
+  name: crosscorr
   nprocess: 1
 - classname: YawSummarize
-  module_name: rail.yaw_rail.summarize
+  module_name: rail.estimation.algos.cc_yaw
   name: estimate
   nprocess: 1
 - classname: YawCacheDrop
-  module_name: rail.yaw_rail.cache
+  module_name: rail.estimation.algos.cc_yaw
   name: drop_ref
   nprocess: 1
 - classname: YawCacheDrop
-  module_name: rail.yaw_rail.cache
+  module_name: rail.estimation.algos.cc_yaw
   name: drop_unk
   nprocess: 1
