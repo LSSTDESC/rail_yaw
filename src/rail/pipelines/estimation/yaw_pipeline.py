@@ -1,36 +1,34 @@
 #!/usr/bin/env python
-# coding: utf-8
+#
+# This script produces a pipeline file for the yet_another_wizz example notebook
+#
 
-# Prerquisites, os, and numpy
+# pylint: skip-file
 import os
-import numpy as np
 
-# Various rail modules
+from rail.core.stage import RailStage, RailPipeline
 import rail.stages
+
 rail.stages.import_and_attach_all()
 from rail.stages import *
 
-from rail.core.stage import RailStage, RailPipeline
-import ceci
-from rail.yaw_rail.cache import stage_helper  # utility for YawCacheCreate
+try:  # TODO: remove when integrated in RAIL
+    YawCacheCreate
+except NameError:
+    from rail.estimation.algos.cc_yaw import *
 
 
-
+ROOT = "run"
 VERBOSE = "debug"  # verbosity level of built-in logger, disable with "error"
 
+# configuration for the correlation measurements
 corr_config = dict(
-    rmin=100,   # in kpc
-    rmax=1000,  # in kpc
-    # rweight=None,
-    # rbin_num=50,
-    zmin=0.,
-    zmax=3.,
-    zbin_num=8,  # default: 30
-    # method="linear",
-    # zbins=np.linspace(zmin, zmax, zbin_num+1)
-    # crosspatch=True,
-    # thread_num=None,
-    verbose=VERBOSE,  # default: "info"
+    rmin=100,
+    rmax=1000,
+    zmin=0.0,
+    zmax=3.0,
+    zbin_num=8,
+    verbose=VERBOSE,
 )
 
 
@@ -42,71 +40,66 @@ class YawPipeline(RailPipeline):
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
 
-        self.ref = YawCacheCreate.build(
-            aliases=stage_helper("ref"),
-            path="./test_ref",
-            overwrite=True,  # default: False
+        self.cache_ref = YawCacheCreate.build(
+            aliases=create_yaw_cache_alias("ref"),
+            path=os.path.join(ROOT, "test_ref"),
+            overwrite=True,
             ra_name="ra",
             dec_name="dec",
             redshift_name="z",
             n_patches=5,
-            verbose=VERBOSE,  # default: "info"
-        )
-        
-        self.unk = YawCacheCreate.build(
-            aliases=stage_helper("unk"),
-            path="./test_unk",
-            overwrite=True,  # default: False
-            ra_name="ra",
-            dec_name="dec",
-            # redshift_name=,
-            # weight_name=,
-            patches="./test_ref",
-            # patch_name=,
-            # n_patches=,
-            verbose=VERBOSE,  # default: "info"
+            verbose=VERBOSE,
         )
 
-        self.corr_ss = YawAutoCorrelate.build(
-            connections=dict(
-                sample=self.ref.io.cache,
-            ),
-            **corr_config
+        self.cache_unk = YawCacheCreate.build(
+            aliases=create_yaw_cache_alias("unk"),
+            path=os.path.join(ROOT, "test_unk"),
+            overwrite=True,
+            ra_name="ra",
+            dec_name="dec",
+            patches=os.path.join(ROOT, "test_ref"),
+            verbose=VERBOSE,
         )
-        
-        self.corr_sp = YawCrossCorrelate.build(
+
+        self.autocorr = YawAutoCorrelate.build(
             connections=dict(
-                reference=self.ref.io.cache,
-                unknown=self.unk.io.cache,
+                sample=self.cache_ref.io.cache,
             ),
-            **corr_config
+            **corr_config,
+        )
+
+        self.crosscorr = YawCrossCorrelate.build(
+            connections=dict(
+                reference=self.cache_ref.io.cache,
+                unknown=self.cache_unk.io.cache,
+            ),
+            **corr_config,
         )
 
         self.estimate = YawSummarize.build(
             connections=dict(
-                cross_corr=self.corr_sp.io.crosscorr,
-                ref_corr=self.corr_ss.io.autocorr,
+                cross_corr=self.crosscorr.io.crosscorr,
+                ref_corr=self.autocorr.io.autocorr,
             ),
             verbose=VERBOSE,
         )
-        
+
         self.drop_ref = YawCacheDrop.build(
             connections=dict(
-                cache=self.ref.io.cache,
+                cache=self.cache_ref.io.cache,
             ),
-            verbose=VERBOSE,           
+            verbose=VERBOSE,
         )
 
         self.drop_unk = YawCacheDrop.build(
             connections=dict(
-                cache=self.unk.io.cache,                
+                cache=self.cache_unk.io.cache,
             ),
-            verbose=VERBOSE,           
+            verbose=VERBOSE,
         )
 
-        
 
-if __name__ == '__main__':    
+if __name__ == "__main__":
     pipe = YawPipeline()
     pipe.initialize(
         dict(
@@ -116,11 +109,7 @@ if __name__ == '__main__':
             rand_unk="/dev/null",
             unk_corr="/dev/null",
         ),
-        dict(
-            output_dir='.',
-            log_dir='.',
-            resume=False
-        ),
+        dict(output_dir=ROOT, log_dir=ROOT, resume=False),
         None,
     )
-    pipe.save('tmp_yaw_pipeline.yml')
+    pipe.save(os.path.join(ROOT, "yaw_pipeline.yml"))
