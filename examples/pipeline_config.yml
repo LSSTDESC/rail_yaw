@@ -1,0 +1,115 @@
+corr_sp:
+  aliases:
+    crosscorr: crosscorr_corr_sp
+    reference: cache_ref
+    unknown: cache_unk
+  config: null
+  crosspatch: true
+  method: linear
+  name: corr_sp
+  output_mode: default
+  rbin_num: 50
+  reference: None
+  rmax: 1000.0
+  rmin: 100.0
+  rweight: null
+  thread_num: null
+  unknown: None
+  verbose: debug
+  zbin_num: 8
+  zbins: null
+  zmax: 1.7999966144561768
+  zmin: 0.20000234246253967
+corr_ss:
+  aliases:
+    autocorr: autocorr_corr_ss
+    sample: cache_ref
+  config: null
+  crosspatch: true
+  method: linear
+  name: corr_ss
+  output_mode: default
+  rbin_num: 50
+  rmax: 1000.0
+  rmin: 100.0
+  rweight: null
+  sample: None
+  thread_num: null
+  verbose: debug
+  zbin_num: 8
+  zbins: null
+  zmax: 1.7999966144561768
+  zmin: 0.20000234246253967
+drop_ref:
+  aliases:
+    cache: cache_ref
+  cache: None
+  config: null
+  name: drop_ref
+  output_mode: default
+  verbose: info
+drop_unk:
+  aliases:
+    cache: cache_unk
+  cache: None
+  config: null
+  name: drop_unk
+  output_mode: default
+  verbose: info
+estimate:
+  aliases:
+    cross_corr: crosscorr_corr_sp
+    output: output_estimate
+    ref_corr: autocorr_corr_ss
+    yaw_cc: yaw_cc_estimate
+  config: null
+  cross_corr: None
+  cross_est: null
+  crosspatch: true
+  name: estimate
+  output_mode: default
+  ref_corr: None
+  ref_est: null
+  unk_corr: None
+  unk_est: null
+  verbose: debug
+ref:
+  aliases:
+    cache: cache_ref
+    data: input_data
+    rand: input_random
+  config: null
+  data: None
+  dec_name: dec
+  n_patches: 5
+  name: ref
+  output_mode: default
+  overwrite: true
+  patch_name: null
+  patches: null
+  path: ./test_ref
+  ra_name: ra
+  rand: None
+  redshift_name: z
+  verbose: debug
+  weight_name: null
+unk:
+  aliases:
+    cache: cache_unk
+    data: input_data
+    rand: rand_unk
+  config: null
+  data: None
+  dec_name: dec
+  n_patches: null
+  name: unk
+  output_mode: default
+  overwrite: true
+  patch_name: null
+  patches: ./test_ref
+  path: ./test_unk
+  ra_name: ra
+  rand: None
+  redshift_name: null
+  verbose: debug
+  weight_name: null
