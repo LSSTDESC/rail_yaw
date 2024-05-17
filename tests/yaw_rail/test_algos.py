@@ -6,14 +6,20 @@ import numpy as np
 import numpy.testing as npt
 from pytest import mark
 
-from rail.yaw_rail import (
+from rail.estimation.algos.cc_yaw import (
+    stage_helper,
     YawAutoCorrelate,
     YawCacheCreate,
     YawCacheDrop,
     YawCrossCorrelate,
     YawSummarize,
 )
-from rail.yaw_rail.cache import stage_helper
+
+
+def test_stage_helper():
+    name = "test"
+    aliases = stage_helper(name)
+    assert all(alias == f"{key}_{name}" for key, alias in aliases.items())
 
 
 def write_expect_wss(path: Path) -> Path:

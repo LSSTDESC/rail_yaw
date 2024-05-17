@@ -17,17 +17,14 @@ from typing import TextIO
 
 import numpy as np
 import qp
-from yaw import CorrFunc, RedshiftData, ResamplingConfig
+from yaw import RedshiftData
 
 from ceci.config import StageParameter
-from rail.core.data import DataHandle, QPHandle
-from rail.yaw_rail.correlation import YawCorrFuncHandle
-from rail.yaw_rail.logging import yaw_logged
-from rail.yaw_rail.stage import YawRailStage, create_param
+from rail.core.data import DataHandle
+from rail.yaw_rail.stage import create_param
 
 __all__ = [
     "YawRedshiftDataHandle",
-    "YawSummarize",
 ]
 
 
@@ -110,96 +107,3 @@ class YawRedshiftDataHandle(DataHandle):
         # cannot use native yaw I/O methods because they produce multiple files
         with open(path, mode="wb") as f:
             pickle.dump(data, f)
-
-
-class YawSummarize(
-    YawRailStage,
-    config_items=dict(
-        **config_yaw_est,
-        **config_yaw_resampling,
-    ),
-):
-    """
-    A simple summarizer that computes a clustering redshift estimate from the
-    measured correlation amplitudes.
-
-    Evaluates the cross-correlation pair counts with the provided estimator.
-    Additionally corrects for galaxy sample bias if autocorrelation measurements
-    are given.
-
-    .. warning::
-    This summarizer simply replaces all non-finite and negative values in the
-    clustering redshift estimate to produce PDFs. This may have significant
-    impacts on the recovered mean redshift.
-    """
-
-    inputs = [
-        ("cross_corr", YawCorrFuncHandle),
-        ("ref_corr", YawCorrFuncHandle),
-        ("unk_corr", YawCorrFuncHandle),
-    ]
-    outputs = [
-        ("output", QPHandle),
-        ("yaw_cc", YawRedshiftDataHandle),
-    ]
-
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
-        config = {p: self.config_options[p].value for p in config_yaw_resampling}
-        self.yaw_config = ResamplingConfig.create(**config)
-
-    def summarize(
-        self,
-        cross_corr: CorrFunc,
-        ref_corr: CorrFunc | None = None,
-        unk_corr: CorrFunc | None = None,
-    ) -> dict[str, DataHandle]:
-        """
-        Compute a clustring redshift estimate and convert it to a PDF.
-
-        Parameters
-        ----------
-        cross_corr : CorrFunc
-            Pair counts from the cross-correlation measurement, basis for the
-            clustering redshift estimate.
-        ref_corr : CorrFunc, optional
-            Pair counts from the reference sample autocorrelation measurement,
-            used to correct for the reference sample galaxy bias.
-        unk_corr : CorrFunc, optional
-            Pair counts from the unknown sample autocorrelation measurement,
-            used to correct for the reference sample galaxy bias. Typically only
-            availble when using simulated data sets.
-
-        Returns
-        -------
-        dict
-            Dictionary with keys `"output"` and `"yaw_cc"`:
-            1. `QPHandle` containing PDFs of the estimated spatial samples.
-            2. `YawRedshiftDataHandle` wrapping the direct output of
-               *yet_another_wizz*; the clustering redshift estimate, spatial
-               samples thereof, and its covariance matrix.
-        """
-        self.set_data("cross_corr", cross_corr)
-        self.set_optional_data("ref_corr", ref_corr)
-        self.set_optional_data("unk_corr", unk_corr)
-
-        self.run()
-        return {name: self.get_handle(name) for name, _ in self.outputs}
-
-    @yaw_logged
-    def run(self) -> None:
-        cross_corr: CorrFunc = self.get_data("cross_corr")
-        ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
-        unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
-
-        nz_cc = RedshiftData.from_corrfuncs(
-            cross_corr=cross_corr,
-            ref_corr=ref_corr,
-            unk_corr=unk_corr,
-            config=ResamplingConfig(),
-            **self.get_algo_config_dict(exclude=config_yaw_resampling),
-        )
-        ensemble = redshift_data_to_qp(nz_cc)
-
-        self.add_data("output", ensemble)
-        self.add_data("yaw_cc", nz_cc)
