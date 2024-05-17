@@ -13,16 +13,13 @@ from __future__ import annotations
 
 import logging
 import os
-from itertools import chain
 from shutil import rmtree
-from typing import TYPE_CHECKING, Any, TextIO
+from typing import TYPE_CHECKING, TextIO
 
-from yaw import NewCatalog
+from yaw.catalogs import NewCatalog
 
 from ceci.config import StageParameter
-from rail.core.data import DataHandle, TableHandle
-from rail.yaw_rail.logging import yaw_logged
-from rail.yaw_rail.stage import YawRailStage
+from rail.core.data import DataHandle
 
 if TYPE_CHECKING:  # pragma: no cover
     from pandas import DataFrame
@@ -31,8 +28,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 __all__ = [
     "YawCache",
-    "YawCacheCreate",
-    "YawCacheDrop",
     "YawCacheHandle",
 ]
 
@@ -472,144 +467,3 @@ class YawCacheHandle(DataHandle):
     def _write(cls, data: YawCache, path: str, **kwargs) -> None:
         with cls._open(path, mode="w") as f:
             f.write(data.path)
-
-
-def handle_has_path(handle: DataHandle) -> bool:
-    """This is a workaround for a potential bug in RAIL."""
-    return handle.path is not None and handle.path != "None"
-
-
-class YawCacheCreate(
-    YawRailStage,
-    config_items=dict(
-        **config_cache,
-        **config_yaw_columns,
-        **config_yaw_patches,
-    ),
-):
-    """
-    Create a new cache directory to hold a data set and optionally its matching
-    random catalog.
-
-    Both inputs are split into consistent spatial patches that are required by
-    *yet_another_wizz* for correlation function covariance estimates. Each
-    patch is cached separately for efficient access.
-
-    The cache can be constructed from input files or tabular data in memory.
-    Column names for sky coordinates are required, redshifts and per-object
-    weights are optional. One out of three patch create methods must be
-    specified:
-    1. Splitting the data into predefined patches (e.g. form an existing cache
-       instance).
-    2. Splitting the data based on a column with patch indices.
-    3. Generating approximately equal size patches using k-means clustering of
-       objects positions (preferably randoms if provided).
-    """
-
-    inputs = [
-        ("data", TableHandle),
-        ("rand", TableHandle),
-    ]
-    outputs = [
-        ("cache", YawCacheHandle),
-    ]
-
-    def create(self, data: DataFrame, rand: DataFrame | None = None) -> YawCacheHandle:
-        """
-        Create the new cache directory and split the input data into spatial
-        patches.
-
-        Parameters
-        ----------
-        data : DataFrame
-            The data set to split into patches and cache.
-        rand : DataFrame, optional
-            The randoms to split into patches and cache, positions used to
-            automatically generate patch centers if provided and stage is
-            configured with `n_patches`.
-
-        Returns
-        -------
-        YawCacheHandle
-            A handle for the newly created cache directory.
-        """
-        self.set_data("data", data)
-        self.set_optional_data("rand", rand)
-
-        self.run()
-        return self.get_handle("cache")
-
-    @yaw_logged
-    def run(self) -> None:
-        config = self.get_config_dict()
-
-        if config["patches"] is not None:
-            patch_centers = YawCache(config["patches"]).get_patch_centers()
-        else:
-            patch_centers = None
-
-        cache = YawCache.create(config["path"], overwrite=config["overwrite"])
-
-        rand: TableHandle | None = self.get_optional_handle("rand")
-        if rand is not None:
-            cache.rand.set(
-                source=rand.path if handle_has_path(rand) else rand.read(),
-                patch_centers=patch_centers,
-                **self.get_algo_config_dict(),
-            )
-
-        data: TableHandle = self.get_handle("data")
-        cache.data.set(
-            source=data.path if handle_has_path(data) else data.read(),
-            patch_centers=patch_centers,
-            **self.get_algo_config_dict(),
-        )
-
-        self.add_data("cache", cache)
-
-
-def stage_helper(suffix: str) -> dict[str, Any]:
-    """
-    Create an alias mapping for all `YawCacheCreate` stage in- and outputs.
-
-    Useful when creating a new stage with `make_stage`, e.g. by setting
-    `aliases=stage_helper("suffix")`.
-
-    Parameters
-    ----------
-    name : str
-        The suffix to append to the in- and output tags, e.g. `"data_suffix"`.
-
-    Returns
-    -------
-    dict
-        Mapping from original to aliased in- and output tags.
-    """
-    keys_in = (key for key, _ in YawCacheCreate.inputs)
-    keys_out = (key for key, _ in YawCacheCreate.outputs)
-    return {key: f"{key}_{suffix}" for key in chain(keys_in, keys_out)}
-
-
-class YawCacheDrop(YawRailStage):
-    """Utility stage to delete a *yet_another_wizz* cache directory."""
-
-    inputs = [
-        ("cache", YawCacheHandle),
-    ]
-    outputs = []
-
-    def run(self) -> None:
-        cache: YawCache = self.get_data("cache")
-        cache.drop()
-
-    def drop(self, cache: YawCache) -> None:
-        """
-        Delete a data cache.
-
-        Parameters
-        ----------
-        cache : YawCache
-            The cache to delete.
-        """
-        self.set_data("cache", cache)
-        self.run()
