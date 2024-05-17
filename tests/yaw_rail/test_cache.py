@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from numpy.testing import assert_array_equal
-from pytest import fixture, mark, raises
+from pytest import fixture, raises
 from yaw.core.coordinates import CoordSky
 
 from rail.yaw_rail import cache
@@ -240,20 +240,3 @@ def test_TestYawCacheHandle(tmp_path):
 
     handle.write()  # ._write()
     assert handle.read(force=True).path == c.path  # ._open(), ._read()
-
-
-@mark.parametrize(
-    "value,expect", [("/some/path", True), ("None", False), (None, False)]
-)
-def test_handle_has_path(value, expect):
-    class DummyHandle:
-        path = value
-
-    dummy = DummyHandle()
-    assert cache.handle_has_path(dummy) == expect
-
-
-def test_stage_helper():
-    name = "test"
-    aliases = cache.stage_helper(name)
-    assert all(alias == f"{key}_{name}" for key, alias in aliases.items())

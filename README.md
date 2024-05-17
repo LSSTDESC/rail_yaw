@@ -44,7 +44,7 @@ This needs refinement in a future release. For now it is advised to use the
 second output of the summary stage, which is the raw clutering redshift estimate
 from *yet_another_wizz* (`yaw.RedshiftData`).
 
-![rail_yaw_network](https://raw.githubusercontent.com/LSSTDESC/rail_yaw/main/examples/rail_yaw_network.png)
+![rail_yaw_network](https://raw.githubusercontent.com/LSSTDESC/rail_yaw/main/examples/rail_yaw_network.svg)
 
 ## RAIL: Redshift Assessment Infrastructure Layers
 

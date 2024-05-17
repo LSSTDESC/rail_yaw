@@ -22,7 +22,9 @@ dependencies = [
     "h5py",
     "pz-rail-base",
     "qp-prob",
-    "yet_another_wizz",
+    # fix yet_another_wizz version; if there is a new release, issue a new
+    # patch or minor version release, depending on the changes requred
+    "yet_another_wizz==2.5.7",
 ]
 
 [project.urls]
