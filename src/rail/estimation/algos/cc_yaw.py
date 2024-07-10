@@ -148,31 +148,6 @@ class YawCacheCreate(
         self.add_data("cache", cache)
 
 
-class YawCacheDrop(YawRailStage):
-    """Utility stage to delete a *yet_another_wizz* cache directory."""
-
-    inputs = [
-        ("cache", YawCacheHandle),
-    ]
-    outputs = []
-
-    def run(self) -> None:
-        cache: YawCache = self.get_data("cache")
-        cache.drop()
-
-    def drop(self, cache: YawCache) -> None:
-        """
-        Delete a data cache.
-
-        Parameters
-        ----------
-        cache : YawCache
-            The cache to delete.
-        """
-        self.set_data("cache", cache)
-        self.run()
-
-
 class YawAutoCorrelate(
     YawBaseCorrelate,
     config_items=dict(
