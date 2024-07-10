@@ -1,6 +1,6 @@
 autocorr:
   aliases:
-    autocorr: autocorr_autocorr
+    auto_corr: auto_corr_autocorr
     sample: cache_cache_ref
   config: null
   crosspatch: true
@@ -60,7 +60,7 @@ cache_unk:
   weight_name: null
 crosscorr:
   aliases:
-    crosscorr: crosscorr_crosscorr
+    cross_corr: cross_corr_crosscorr
     reference: cache_cache_ref
     unknown: cache_cache_unk
   config: null
@@ -80,36 +80,20 @@ crosscorr:
   zbins: null
   zmax: 1.7999966144561768
   zmin: 0.20000234246253967
-drop_ref:
-  aliases:
-    cache: cache_cache_ref
-  cache: None
-  config: null
-  name: drop_ref
-  output_mode: default
-  verbose: info
-drop_unk:
-  aliases:
-    cache: cache_cache_unk
-  cache: None
-  config: null
-  name: drop_unk
-  output_mode: default
-  verbose: info
 estimate:
   aliases:
-    cross_corr: crosscorr_crosscorr
+    auto_corr_ref: auto_corr_autocorr
+    cross_corr: cross_corr_crosscorr
     output: output_estimate
-    ref_corr: autocorr_autocorr
     yaw_cc: yaw_cc_estimate
+  auto_corr_ref: None
+  auto_corr_unk: None
   config: null
   cross_corr: None
   cross_est: null
   crosspatch: true
   name: estimate
   output_mode: default
-  ref_corr: None
   ref_est: null
-  unk_corr: None
   unk_est: null
   verbose: debug

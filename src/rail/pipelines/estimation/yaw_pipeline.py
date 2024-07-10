@@ -79,21 +79,7 @@ class YawPipeline(RailPipeline):
         self.estimate = YawSummarize.build(
             connections=dict(
                 cross_corr=self.crosscorr.io.crosscorr,
-                ref_corr=self.autocorr.io.autocorr,
-            ),
-            verbose=VERBOSE,
-        )
-
-        self.drop_ref = YawCacheDrop.build(
-            connections=dict(
-                cache=self.cache_ref.io.cache,
-            ),
-            verbose=VERBOSE,
-        )
-
-        self.drop_unk = YawCacheDrop.build(
-            connections=dict(
-                cache=self.cache_unk.io.cache,
+                auto_corr_ref=self.autocorr.io.autocorr,
             ),
             verbose=VERBOSE,
         )
@@ -107,7 +93,7 @@ if __name__ == "__main__":
             rand_ref="dummy.in",
             data_unk="dummy.in",
             rand_unk="/dev/null",
-            unk_corr="/dev/null",
+            auto_corr_unk="/dev/null",
         ),
         dict(output_dir=ROOT, log_dir=ROOT, resume=False),
         None,

@@ -1,9 +1,9 @@
 config: pipeline_config.yml
 inputs:
+  auto_corr_unk: /dev/null
   input_data: dummy.in
   input_rand: dummy.in
   rand_unk: /dev/null
-  unk_corr: /dev/null
 log_dir: .
 modules: rail
 output_dir: .
@@ -30,12 +30,4 @@ stages:
 - classname: YawSummarize
   module_name: rail.estimation.algos.cc_yaw
   name: estimate
-  nprocess: 1
-- classname: YawCacheDrop
-  module_name: rail.estimation.algos.cc_yaw
-  name: drop_ref
-  nprocess: 1
-- classname: YawCacheDrop
-  module_name: rail.estimation.algos.cc_yaw
-  name: drop_unk
   nprocess: 1

@@ -3,6 +3,7 @@
 # This script runs the pipeline file produced by `yaw_pipeline.py`
 #
 import os
+from shutil import rmtree
 
 from yaw import UniformRandoms
 
@@ -57,3 +58,8 @@ if __name__ == "__main__":
 
     pipe = ceci.Pipeline.read(os.path.join(ROOT, "yaw_pipeline.yml"))
     pipe.run()
+
+    # manual clean-up of cached data
+    for kind in ("ref", "unk"):
+        # path defined in yaw_pipeline.py
+        rmtree(os.path.join(ROOT, f"test_{kind}"))
