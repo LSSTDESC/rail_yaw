@@ -88,6 +88,7 @@ class YawCacheCreate(
 
     inputs = [
         ("data", TableHandle),
+        # optional
         ("rand", TableHandle),
     ]
     outputs = [
@@ -169,7 +170,7 @@ class YawAutoCorrelate(
         ("sample", YawCacheHandle),
     ]
     outputs = [
-        ("autocorr", YawCorrFuncHandle),
+        ("auto_corr", YawCorrFuncHandle),
     ]
 
     def correlate(self, sample: YawCache) -> YawCorrFuncHandle:  # pylint: disable=W0221
@@ -190,7 +191,7 @@ class YawAutoCorrelate(
         self.set_data("sample", sample)
 
         self.run()
-        return self.get_handle("autocorr")
+        return self.get_handle("auto_corr")
 
     @yaw_logged
     def run(self) -> None:
@@ -207,7 +208,7 @@ class YawAutoCorrelate(
                 compute_rr=True,
             )
 
-        self.add_data("autocorr", corr)
+        self.add_data("auto_corr", corr)
 
 
 class YawCrossCorrelate(
@@ -233,7 +234,7 @@ class YawCrossCorrelate(
         ("unknown", YawCacheHandle),
     ]
     outputs = [
-        ("crosscorr", YawCorrFuncHandle),
+        ("cross_corr", YawCorrFuncHandle),
     ]
 
     def correlate(  # pylint: disable=W0221
@@ -260,7 +261,7 @@ class YawCrossCorrelate(
         self.set_data("unknown", unknown)
 
         self.run()
-        return self.get_handle("crosscorr")
+        return self.get_handle("cross_corr")
 
     def _get_catalogs(
         self,
@@ -291,7 +292,7 @@ class YawCrossCorrelate(
                 unk_rand=rand_unk,
             )
 
-        self.add_data("crosscorr", corr)
+        self.add_data("cross_corr", corr)
 
 
 class YawSummarize(
@@ -317,8 +318,9 @@ class YawSummarize(
 
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
-        ("ref_corr", YawCorrFuncHandle),
-        ("unk_corr", YawCorrFuncHandle),
+        ("auto_corr_ref", YawCorrFuncHandle),
+        # optional
+        ("auto_corr_unk", YawCorrFuncHandle),
     ]
     outputs = [
         ("output", QPHandle),
@@ -333,8 +335,8 @@ class YawSummarize(
     def summarize(
         self,
         cross_corr: CorrFunc,
-        ref_corr: CorrFunc | None = None,
-        unk_corr: CorrFunc | None = None,
+        auto_corr_ref: CorrFunc | None = None,
+        auto_corr_unk: CorrFunc | None = None,
     ) -> dict[str, DataHandle]:
         """
         Compute a clustring redshift estimate and convert it to a PDF.
@@ -344,10 +346,10 @@ class YawSummarize(
         cross_corr : CorrFunc
             Pair counts from the cross-correlation measurement, basis for the
             clustering redshift estimate.
-        ref_corr : CorrFunc, optional
+        auto_corr_ref : CorrFunc, optional
             Pair counts from the reference sample autocorrelation measurement,
             used to correct for the reference sample galaxy bias.
-        unk_corr : CorrFunc, optional
+        auto_corr_unk : CorrFunc, optional
             Pair counts from the unknown sample autocorrelation measurement,
             used to correct for the reference sample galaxy bias. Typically only
             availble when using simulated data sets.
@@ -362,8 +364,8 @@ class YawSummarize(
                samples thereof, and its covariance matrix.
         """
         self.set_data("cross_corr", cross_corr)
-        self.set_optional_data("ref_corr", ref_corr)
-        self.set_optional_data("unk_corr", unk_corr)
+        self.set_optional_data("auto_corr_ref", auto_corr_ref)
+        self.set_optional_data("auto_corr_unk", auto_corr_unk)
 
         self.run()
         return {name: self.get_handle(name) for name, _ in self.outputs}
@@ -371,8 +373,8 @@ class YawSummarize(
     @yaw_logged
     def run(self) -> None:
         cross_corr: CorrFunc = self.get_data("cross_corr")
-        ref_corr: CorrFunc | None = self.get_optional_data("ref_corr")
-        unk_corr: CorrFunc | None = self.get_optional_data("unk_corr")
+        ref_corr: CorrFunc | None = self.get_optional_data("auto_corr_ref")
+        unk_corr: CorrFunc | None = self.get_optional_data("auto_corr_unk")
 
         nz_cc = RedshiftData.from_corrfuncs(
             cross_corr=cross_corr,
