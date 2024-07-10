@@ -24,7 +24,7 @@ dependencies = [
     "qp-prob",
     # fix yet_another_wizz version; if there is a new release, issue a new
     # patch or minor version release, depending on the changes requred
-    "yet_another_wizz==2.5.7",
+    "yet_another_wizz==2.5.8",
 ]
 
 [project.urls]
