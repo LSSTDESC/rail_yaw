@@ -58,11 +58,6 @@ config_yaw_columns = dict(
 )
 
 config_yaw_patches = dict(
-    patches=StageParameter(
-        str,
-        required=False,
-        msg="path to cache which provides the patch centers to construct consistent datasets",
-    ),
     patch_name=StageParameter(
         str,
         required=False,

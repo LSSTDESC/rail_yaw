@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.testing as npt
-from pytest import mark
+from pytest import mark, raises
 
 from rail.estimation.algos.cc_yaw import (
     create_yaw_cache_alias,
@@ -69,6 +69,41 @@ def assert_cols_match(path_a: Path, path_b: Path, *, ignore_cols: list[int]) -> 
         npt.assert_array_equal(col_a, col_b)
 
 
+def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
+    cache_ref = YawCacheCreate.make_stage(
+        name="ref",
+        aliases=create_yaw_cache_alias("ref"),
+        path=f"{tmp_path}/test_ref",
+        ra_name="ra",
+        dec_name="dec",
+        redshift_name="z",
+        n_patches=3,
+    ).create(data=mock_data, rand=mock_rand)
+    assert cache_ref.data.data.exists()
+    assert cache_ref.data.n_patches() == 3
+
+    cache = YawCacheCreate.make_stage(
+        name="ref",
+        aliases=create_yaw_cache_alias("ref"),
+        path=f"{tmp_path}/test_override",
+        ra_name="ra",
+        dec_name="dec",
+        redshift_name="z",
+        n_patches=cache_ref.data.n_patches() + 1,
+    ).create(data=mock_data, rand=mock_rand, patch_source=cache_ref)
+    assert cache.data.n_patches() == cache_ref.data.n_patches()
+
+    with raises(ValueError, match=".*patch.*"):
+        cache = YawCacheCreate.make_stage(
+            name="ref",
+            aliases=create_yaw_cache_alias("ref"),
+            path=f"{tmp_path}/test_no_method",
+            ra_name="ra",
+            dec_name="dec",
+            redshift_name="z",
+        ).create(data=mock_data, rand=mock_rand)
+
+
 @mark.slow
 def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
     cache_ref = YawCacheCreate.make_stage(
@@ -89,8 +124,7 @@ def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
         path=f"{tmp_path}/test_unk",
         ra_name="ra",
         dec_name="dec",
-        patches=f"{tmp_path}/test_ref",
-    ).create(data=mock_data)
+    ).create(data=mock_data, patch_source=cache_ref)
     assert cache_unk.data.data.exists()
     assert not cache_unk.data.rand.exists()
 

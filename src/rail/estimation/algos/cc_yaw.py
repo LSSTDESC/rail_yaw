@@ -71,16 +71,16 @@ class YawCacheCreate(
     Create a new cache directory to hold a data set and optionally its matching
     random catalog.
 
-    Both inputs are split into consistent spatial patches that are required by
-    *yet_another_wizz* for correlation function covariance estimates. Each
-    patch is cached separately for efficient access.
+    Both input data sets are split into consistent spatial patches that are
+    required by *yet_another_wizz* for correlation function covariance estimates.
+    Each patch is cached separately for efficient access.
 
     The cache can be constructed from input files or tabular data in memory.
     Column names for sky coordinates are required, redshifts and per-object
     weights are optional. One out of three patch create methods must be
     specified:
-    1. Splitting the data into predefined patches (e.g. form an existing cache
-       instance).
+    1. Splitting the data into predefined patches (from an existing cache
+       instance, linked as optional stage input).
     2. Splitting the data based on a column with patch indices.
     3. Generating approximately equal size patches using k-means clustering of
        objects positions (preferably randoms if provided).
@@ -90,12 +90,18 @@ class YawCacheCreate(
         ("data", TableHandle),
         # optional
         ("rand", TableHandle),
+        ("patch_source", YawCacheHandle),
     ]
     outputs = [
         ("cache", YawCacheHandle),
     ]
 
-    def create(self, data: DataFrame, rand: DataFrame | None = None) -> YawCacheHandle:
+    def create(
+        self,
+        data: TableHandle | DataFrame,
+        rand: TableHandle | DataFrame | None = None,
+        patch_source: YawCacheHandle | YawCache | None = None,
+    ) -> YawCacheHandle:
         """
         Create the new cache directory and split the input data into spatial
         patches.
@@ -108,6 +114,11 @@ class YawCacheCreate(
             The randoms to split into patches and cache, positions used to
             automatically generate patch centers if provided and stage is
             configured with `n_patches`.
+        patch_source : YawCache, optional
+            An existing cache instance that provides the patch centers. Use to
+            ensure consistent patch centers when running cross-correlations.
+            Takes precedence over the `patch_name` and `n_patches` configuration
+            options.
 
         Returns
         -------
@@ -116,6 +127,7 @@ class YawCacheCreate(
         """
         self.set_data("data", data)
         self.set_optional_data("rand", rand)
+        self.set_optional_data("patch_source", patch_source)
 
         self.run()
         return self.get_handle("cache")
@@ -124,8 +136,9 @@ class YawCacheCreate(
     def run(self) -> None:
         config = self.get_config_dict()
 
-        if config["patches"] is not None:
-            patch_centers = YawCache(config["patches"]).get_patch_centers()
+        patch_source: YawCacheHandle | None = self.get_optional_handle("patch_source")
+        if patch_source is not None:
+            patch_centers = patch_source.data.get_patch_centers()
         else:
             patch_centers = None
 
@@ -173,7 +186,9 @@ class YawAutoCorrelate(
         ("auto_corr", YawCorrFuncHandle),
     ]
 
-    def correlate(self, sample: YawCache) -> YawCorrFuncHandle:  # pylint: disable=W0221
+    def correlate(  # pylint: disable=W0221
+        self, sample: YawCacheHandle | YawCache
+    ) -> YawCorrFuncHandle:
         """
         Measure the angular autocorrelation amplitude in bins of redshift.
 
@@ -238,7 +253,7 @@ class YawCrossCorrelate(
     ]
 
     def correlate(  # pylint: disable=W0221
-        self, reference: YawCache, unknown: YawCache
+        self, reference: YawCacheHandle | YawCache, unknown: YawCacheHandle | YawCache
     ) -> YawCorrFuncHandle:
         """
         Measure the angular cross-correlation amplitude in bins of redshift.
@@ -334,9 +349,9 @@ class YawSummarize(
 
     def summarize(
         self,
-        cross_corr: CorrFunc,
-        auto_corr_ref: CorrFunc | None = None,
-        auto_corr_unk: CorrFunc | None = None,
+        cross_corr: YawCorrFuncHandle | CorrFunc,
+        auto_corr_ref: YawCorrFuncHandle | CorrFunc | None = None,
+        auto_corr_unk: YawCorrFuncHandle | CorrFunc | None = None,
     ) -> dict[str, DataHandle]:
         """
         Compute a clustring redshift estimate and convert it to a PDF.

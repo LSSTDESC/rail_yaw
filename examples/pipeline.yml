@@ -3,6 +3,7 @@ inputs:
   auto_corr_unk: /dev/null
   input_data: dummy.in
   input_rand: dummy.in
+  patch_source_ref: /dev/null
   rand_unk: /dev/null
 log_dir: .
 modules: rail
