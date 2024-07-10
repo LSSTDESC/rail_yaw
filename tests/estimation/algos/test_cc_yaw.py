@@ -10,7 +10,6 @@ from rail.estimation.algos.cc_yaw import (
     create_yaw_cache_alias,
     YawAutoCorrelate,
     YawCacheCreate,
-    YawCacheDrop,
     YawCrossCorrelate,
     YawSummarize,
 )
@@ -116,6 +115,4 @@ def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
     ncc.data.to_files(tmp_path / "ncc")
     assert_cols_match(write_expect_ncc(tmp_path), tmp_path / "ncc.dat", ignore_cols=[3])
 
-    dropper = YawCacheDrop.make_stage()
-    dropper.drop(cache_ref)
-    dropper.drop(cache_unk)
+    # cache cleaned up by pytest
