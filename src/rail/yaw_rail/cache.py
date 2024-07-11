@@ -16,7 +16,9 @@ import os
 from shutil import rmtree
 from typing import TYPE_CHECKING, TextIO
 
+import numpy as np
 from yaw.catalogs import NewCatalog
+from yaw.core.coordinates import CoordSky
 
 from ceci.config import StageParameter
 from rail.core.data import DataHandle
@@ -24,7 +26,7 @@ from rail.core.data import DataHandle
 if TYPE_CHECKING:  # pragma: no cover
     from pandas import DataFrame
     from yaw.catalogs.scipy import ScipyCatalog
-    from yaw.core.coordinates import Coordinate, CoordSky
+    from yaw.core.coordinates import Coordinate
 
 __all__ = [
     "YawCache",
@@ -58,6 +60,12 @@ config_yaw_columns = dict(
 )
 
 config_yaw_patches = dict(
+    patch_file=StageParameter(
+        str,
+        required=False,
+        msg="path to ASCII file that lists patch centers (one per line) as "
+        "pair of R.A./Dec. in radian, separated by a single space or tab",
+    ),
     patch_name=StageParameter(
         str,
         required=False,
@@ -86,6 +94,30 @@ def normalise_path(path: str) -> str:
     """Substitute UNIX style home directories and environment variables in path
     names."""
     return os.path.expandvars(os.path.expanduser(path))
+
+
+def patch_centers_from_file(path: str) -> CoordSky:
+    """
+    Load a list of patch centers from a file.
+
+    Patch centers are expected to be listed line-by-line as pairs of R.A./Dec.
+    in radian, separated by a single space or tab.
+
+    Parameters
+    ----------
+    path: str
+        Path to input file.
+
+    Returns
+    -------
+    CoordSky
+        List of patch centers read from file.
+    """
+    coords = np.loadtxt(path, ndmin=2)
+    try:
+        return CoordSky.from_array(coords)
+    except Exception as err:
+        raise ValueError("invalid coordinate file format or schema") from err
 
 
 def get_patch_method(
@@ -117,7 +149,8 @@ def get_patch_method(
     ValueError
         If all parameter values are set to `None`.
     """
-    # preferred order, "create" should be the last resort
+    # NOTE: "consistent" referes to the consistency of patch centers of two
+    # catalogs created with a particular patch creation method.
     if patch_centers is not None:  # deterministic and consistent
         return patch_centers
     if patch_name is not None:  # deterministic but assumes consistency
@@ -322,7 +355,7 @@ class YawCache:
         has to be created with the `create` method.
     """
 
-    _flag_path = ".yaw_cache"  # file to a cache directory, safeguard for .drop()
+    _flag_path = ".yaw_cache"  # file to mark a valid cache directory
     path: str
     """Path at which the data and random catalogues are cached."""
     data: YawCatalog
@@ -379,6 +412,7 @@ class YawCache:
 
         logger.info("creating new cache directory '%s'", normalised)
         os.makedirs(normalised)
+        # create the flag file
         with open(os.path.join(normalised, cls._flag_path), "w"):
             pass
         return cls(path)
@@ -393,7 +427,7 @@ class YawCache:
         Returns
         -------
         CoordSky
-            The patch center coordinates in degrees as
+            The patch center coordinates in radian as
             `yaw.core.coordinates.CoordSky` instance.
 
         Raises

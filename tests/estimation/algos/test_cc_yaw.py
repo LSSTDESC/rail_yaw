@@ -69,41 +69,6 @@ def assert_cols_match(path_a: Path, path_b: Path, *, ignore_cols: list[int]) -> 
         npt.assert_array_equal(col_a, col_b)
 
 
-def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
-    cache_ref = YawCacheCreate.make_stage(
-        name="ref",
-        aliases=create_yaw_cache_alias("ref"),
-        path=f"{tmp_path}/test_ref",
-        ra_name="ra",
-        dec_name="dec",
-        redshift_name="z",
-        n_patches=3,
-    ).create(data=mock_data, rand=mock_rand)
-    assert cache_ref.data.data.exists()
-    assert cache_ref.data.n_patches() == 3
-
-    cache = YawCacheCreate.make_stage(
-        name="ref",
-        aliases=create_yaw_cache_alias("ref"),
-        path=f"{tmp_path}/test_override",
-        ra_name="ra",
-        dec_name="dec",
-        redshift_name="z",
-        n_patches=cache_ref.data.n_patches() + 1,
-    ).create(data=mock_data, rand=mock_rand, patch_source=cache_ref)
-    assert cache.data.n_patches() == cache_ref.data.n_patches()
-
-    with raises(ValueError, match=".*patch.*"):
-        cache = YawCacheCreate.make_stage(
-            name="ref",
-            aliases=create_yaw_cache_alias("ref"),
-            path=f"{tmp_path}/test_no_method",
-            ra_name="ra",
-            dec_name="dec",
-            redshift_name="z",
-        ).create(data=mock_data, rand=mock_rand)
-
-
 @mark.slow
 def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
     cache_ref = YawCacheCreate.make_stage(
@@ -154,3 +119,61 @@ def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
     assert_cols_match(write_expect_ncc(tmp_path), tmp_path / "ncc.dat", ignore_cols=[3])
 
     # cache cleaned up by pytest
+
+
+@mark.slow
+def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
+    cache_ref = YawCacheCreate.make_stage(
+        name="ref_n_patch",
+        aliases=create_yaw_cache_alias("ref_n_patch"),
+        path=f"{tmp_path}/test_ref",
+        ra_name="ra",
+        dec_name="dec",
+        redshift_name="z",
+        n_patches=3,
+    ).create(data=mock_data, rand=mock_rand)
+    assert cache_ref.data.data.exists()
+    assert cache_ref.data.n_patches() == 3
+    np.savetxt(
+        str(tmp_path / "coords"),
+        cache_ref.data.get_patch_centers().values,
+    )
+
+    cache = YawCacheCreate.make_stage(
+        name="ref_override",
+        aliases=create_yaw_cache_alias("ref_override"),
+        path=f"{tmp_path}/test_override",
+        ra_name="ra",
+        dec_name="dec",
+        redshift_name="z",
+        n_patches=cache_ref.data.n_patches() + 1,
+    ).create(data=mock_data, rand=mock_rand, patch_source=cache_ref)
+    assert cache.data.n_patches() == cache_ref.data.n_patches()
+
+    cache = YawCacheCreate.make_stage(
+        name="ref_file",
+        aliases=create_yaw_cache_alias("ref_file"),
+        path=f"{tmp_path}/test_file",
+        ra_name="ra",
+        dec_name="dec",
+        redshift_name="z",
+        patch_file=str(tmp_path / "coords"),
+    ).create(data=mock_data, rand=mock_rand)
+    npt.assert_almost_equal(
+        cache.data.get_patch_centers().ra,
+        cache_ref.data.get_patch_centers().ra,
+    )
+    npt.assert_almost_equal(
+        cache.data.get_patch_centers().dec,
+        cache_ref.data.get_patch_centers().dec,
+    )
+
+    with raises(ValueError, match=".*patch.*"):
+        YawCacheCreate.make_stage(
+            name="ref_no_method",
+            aliases=create_yaw_cache_alias("ref_no_method"),
+            path=f"{tmp_path}/test_no_method",
+            ra_name="ra",
+            dec_name="dec",
+            redshift_name="z",
+        ).create(data=mock_data, rand=mock_rand)

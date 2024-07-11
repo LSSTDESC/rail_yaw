@@ -13,6 +13,7 @@ from rail.yaw_rail.cache import (
     config_cache,
     config_yaw_columns,
     config_yaw_patches,
+    patch_centers_from_file,
 )
 from rail.yaw_rail.correlation import (
     YawBaseCorrelate,
@@ -79,8 +80,8 @@ class YawCacheCreate(
     Column names for sky coordinates are required, redshifts and per-object
     weights are optional. One out of three patch create methods must be
     specified:
-    1. Splitting the data into predefined patches (from an existing cache
-       instance, linked as optional stage input).
+    1. Splitting the data into predefined patches (from ASCII file or an
+       existing cache instance, linked as optional stage input).
     2. Splitting the data based on a column with patch indices.
     3. Generating approximately equal size patches using k-means clustering of
        objects positions (preferably randoms if provided).
@@ -117,8 +118,7 @@ class YawCacheCreate(
         patch_source : YawCache, optional
             An existing cache instance that provides the patch centers. Use to
             ensure consistent patch centers when running cross-correlations.
-            Takes precedence over the `patch_name` and `n_patches` configuration
-            options.
+            Takes precedence over the any configuration parameters.
 
         Returns
         -------
@@ -137,10 +137,12 @@ class YawCacheCreate(
         config = self.get_config_dict()
 
         patch_source: YawCacheHandle | None = self.get_optional_handle("patch_source")
-        if patch_source is not None:
+        if patch_source is not None:  # stage input takes precedence over config
             patch_centers = patch_source.data.get_patch_centers()
-        else:
+        elif config["patch_file"] is None:
             patch_centers = None
+        else:
+            patch_centers = patch_centers_from_file(config["patch_file"])
 
         cache = YawCache.create(config["path"], overwrite=config["overwrite"])
 

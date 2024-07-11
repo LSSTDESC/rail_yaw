@@ -15,6 +15,21 @@ if TYPE_CHECKING:
     from yaw.catalogs.scipy import ScipyCatalog
 
 
+def test_patch_centers_from_file(tmp_path):
+    ra = np.linspace(1.0, 2.0)
+    dec = np.linspace(-1.0, 1.0)
+    path = str(tmp_path / "coords")
+    np.savetxt(path, np.transpose([ra, dec]))
+
+    coords = cache.patch_centers_from_file(path)
+    assert_array_equal(coords.ra, ra)
+    assert_array_equal(coords.dec, dec)
+
+    with raises(ValueError, match="invalid.*"):
+        np.savetxt(path, np.transpose([ra, dec, dec]))
+        cache.patch_centers_from_file(path)
+
+
 def test_get_patch_method():
     # test the parameter hierarchy
     kwargs = dict(

@@ -31,6 +31,7 @@ cache_ref:
   name: cache_ref
   output_mode: default
   overwrite: true
+  patch_file: null
   patch_name: null
   patch_source: None
   path: run/test_ref
@@ -52,6 +53,7 @@ cache_unk:
   name: cache_unk
   output_mode: default
   overwrite: true
+  patch_file: null
   patch_name: null
   patch_source: None
   path: run/test_unk
