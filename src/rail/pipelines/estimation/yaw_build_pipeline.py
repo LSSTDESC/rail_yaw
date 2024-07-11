@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 #
-# This script produces a pipeline file for the yet_another_wizz example notebook
+# This script produces a pipeline file akin to the yet_another_wizz example notebook
 #
 
 # pylint: skip-file
 import os
 
-from rail.core.stage import RailStage, RailPipeline
+from yaw import UniformRandoms
+
+from rail.core.stage import RailStage
 import rail.stages
 
 rail.stages.import_and_attach_all()
 from rail.stages import *
+from rail.yaw_rail.hotfixes import FixedRailPipeline as RailPipeline
+from rail.yaw_rail.utils import get_dc2_test_data
 
 try:  # TODO: remove when integrated in RAIL
     YawCacheCreate
@@ -30,6 +34,31 @@ corr_config = dict(
     zbin_num=8,
     verbose=VERBOSE,
 )
+
+
+def create_datasets(root):
+    test_data = get_dc2_test_data()
+    redshifts = test_data["z"].to_numpy()
+    n_data = len(test_data)
+
+    data_name = "input_data.parquet"
+    data_path = os.path.join(root, data_name)
+    test_data.to_parquet(data_path)
+
+    angular_rng = UniformRandoms(
+        test_data["ra"].min(),
+        test_data["ra"].max(),
+        test_data["dec"].min(),
+        test_data["dec"].max(),
+        seed=12345,
+    )
+    test_rand = angular_rng.generate(n_data * 10, draw_from=dict(z=redshifts))
+
+    rand_name = "input_rand.parquet"
+    rand_path = os.path.join(root, rand_name)
+    test_rand.to_parquet(rand_path)
+
+    return (data_path, rand_path)
 
 
 class YawPipeline(RailPipeline):
@@ -52,6 +81,9 @@ class YawPipeline(RailPipeline):
         )
 
         self.cache_unk = YawCacheCreate.build(
+            connections=dict(
+                patch_source=self.cache_ref.io.cache,
+            ),
             aliases=create_yaw_cache_alias("unk"),
             path=os.path.join(ROOT, "test_unk"),
             overwrite=True,
@@ -78,24 +110,29 @@ class YawPipeline(RailPipeline):
 
         self.estimate = YawSummarize.build(
             connections=dict(
-                cross_corr=self.crosscorr.io.crosscorr,
-                auto_corr_ref=self.autocorr.io.autocorr,
+                cross_corr=self.crosscorr.io.cross_corr,
+                auto_corr_ref=self.autocorr.io.auto_corr,
             ),
             verbose=VERBOSE,
         )
 
 
 if __name__ == "__main__":
+    if not os.path.exists(ROOT):
+        os.makedirs(ROOT)
+    data_path, rand_path = create_datasets(ROOT)
+
     pipe = YawPipeline()
     pipe.initialize(
-        dict(
-            data_ref="dummy.in",
-            rand_ref="dummy.in",
-            data_unk="dummy.in",
+        overall_inputs=dict(
+            data_ref=data_path,
+            rand_ref=rand_path,
+            data_unk=data_path,
             rand_unk="/dev/null",
+            patch_source_ref="/dev/null",
             auto_corr_unk="/dev/null",
         ),
-        dict(output_dir=ROOT, log_dir=ROOT, resume=False),
-        None,
+        run_config=dict(output_dir=ROOT, log_dir=ROOT, resume=False),
+        stages_config=None,
     )
-    pipe.save(os.path.join(ROOT, "yaw_pipeline.yml"))
+    pipe.save(os.path.join(ROOT, "yaw_pipeline.yml"), site_name="local")
