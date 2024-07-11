@@ -13,7 +13,7 @@ import rail.stages
 
 rail.stages.import_and_attach_all()
 from rail.stages import *
-from rail.yaw_rail.hotfixes import FixedRailPipeline as RailPipeline
+from rail.yaw_rail.backports import FixedRailPipeline
 from rail.yaw_rail.utils import get_dc2_test_data
 
 try:  # TODO: remove when integrated in RAIL
@@ -61,10 +61,10 @@ def create_datasets(root):
     return (data_path, rand_path)
 
 
-class YawPipeline(RailPipeline):
+class YawPipeline(FixedRailPipeline):
 
     def __init__(self):
-        RailPipeline.__init__(self)
+        FixedRailPipeline.__init__(self)
 
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
