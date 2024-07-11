@@ -88,8 +88,8 @@ class YawBaseCorrelate(YawRailStage):
     inputs: list[tuple[str, YawCacheHandle]]
     outputs: list[tuple[str, YawCorrFuncHandle]]
 
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
         self.yaw_config = Configuration.create(**self.get_algo_config_dict())
 
     @abstractmethod

@@ -143,8 +143,8 @@ class YawSummarize(
         ("yaw_cc", YawRedshiftDataHandle),
     ]
 
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
         config = {p: self.config_options[p].value for p in config_yaw_resampling}
         self.yaw_config = ResamplingConfig.create(**config)
 
