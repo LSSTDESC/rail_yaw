@@ -36,6 +36,10 @@ included in
 
     examples/full_example.ipynb
 
+and an example RAIL pipeline can be generated an executed with code found in
+
+    src/rail/pipelines/estimation/algos
+
 ### Note
 
 The summary stage produces a `qp.Ensemble`, but does so by simply setting all
