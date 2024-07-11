@@ -20,7 +20,7 @@ dynamic = ["version"]
 dependencies = [
     "numpy",
     "h5py",
-    "ceci!=2.0",  # there is a compatibility issue between RAIL and ceci v2.0
+    "ceci<2.0",  # there is a compatibility issue between RAIL and ceci v2.0
     "pz-rail-base",
     "qp-prob",
     # fix yet_another_wizz version; if there is a new release, issue a new
