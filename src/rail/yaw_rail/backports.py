@@ -22,7 +22,6 @@ else:
             reduce_config: bool = False,
             # added keyword arguments
             site_name: str = "local",
-            **kwargs,  # pylint: disable=W0613
         ) -> None:
             super().save(
                 pipefile=pipefile,

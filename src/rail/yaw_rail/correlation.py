@@ -88,5 +88,5 @@ class YawBaseCorrelate(YawRailStage):
         self.yaw_config = Configuration.create(**self.get_algo_config_dict())
 
     @abstractmethod
-    def correlate(self, *inputs: YawCache) -> YawCorrFuncHandle:
+    def correlate(self, *inputs: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
         pass  # pragma: no cover
