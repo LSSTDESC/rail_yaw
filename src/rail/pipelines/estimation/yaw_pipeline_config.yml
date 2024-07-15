@@ -16,14 +16,14 @@ autocorr:
   verbose: debug
   zbin_num: 8
   zbins: null
-  zmax: 1.7999966144561768
-  zmin: 0.20000234246253967
+  zmax: 3.0
+  zmin: 0.0
 cache_ref:
   aliases:
     cache: cache_cache_ref
-    data: input_data
+    data: data_ref
     patch_source: patch_source_ref
-    rand: input_rand
+    rand: rand_ref
   config: null
   data: None
   dec_name: dec
@@ -34,7 +34,7 @@ cache_ref:
   patch_file: null
   patch_name: null
   patch_source: None
-  path: run/test_ref
+  path: data/test_ref
   ra_name: ra
   rand: None
   redshift_name: z
@@ -43,7 +43,7 @@ cache_ref:
 cache_unk:
   aliases:
     cache: cache_cache_unk
-    data: input_data
+    data: data_unk
     patch_source: cache_cache_ref
     rand: rand_unk
   config: null
@@ -56,7 +56,8 @@ cache_unk:
   patch_file: null
   patch_name: null
   patch_source: None
-  path: run/test_unk
+  patches: data/test_ref
+  path: data/test_unk
   ra_name: ra
   rand: None
   redshift_name: null
@@ -82,8 +83,8 @@ crosscorr:
   verbose: debug
   zbin_num: 8
   zbins: null
-  zmax: 1.7999966144561768
-  zmin: 0.20000234246253967
+  zmax: 3.0
+  zmin: 0.0
 estimate:
   aliases:
     auto_corr_ref: auto_corr_autocorr

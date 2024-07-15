@@ -29,6 +29,11 @@ __all__ = [
 ]
 
 
+def handle_has_path(handle: DataHandle) -> bool:
+    """This is a workaround for a peculiarity of `ceci`."""
+    return handle.path is not None and handle.path.lower() != "none"
+
+
 def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
     """Convert parameter metadata, embedded into the *yet_another_wizz*
     configuration dataclasses, to a python dictionary."""
@@ -163,7 +168,7 @@ class YawRailStage(ABC, RailStage):
             if (key in self.algo_parameters) and (key not in exclude)
         }
 
-    def get_optional_handle(self, tag: str, **kwarg) -> DataHandle | None:
+    def get_optional_handle(self, tag: str, **kwargs) -> DataHandle | None:
         """
         Access a handle without raising a `KeyError` if it is not set.
 
@@ -179,12 +184,14 @@ class YawRailStage(ABC, RailStage):
         DataHandle or None
             The handle or nothing if not set.
         """
-        try:
-            return self.get_handle(tag, allow_missing=False, **kwarg)
-        except KeyError:
-            return None
+        kwargs = kwargs.copy()
+        kwargs.update(allow_missing=True)
+        handle = self.get_handle(tag, **kwargs)
+        if handle_has_path(handle) or handle.data is not None:
+            return handle
+        return None
 
-    def get_optional_data(self, tag: str, **kwarg) -> Any | None:
+    def get_optional_data(self, tag: str, **kwargs) -> Any | None:
         """
         Access a handle's data without raising a `KeyError` if it is not set.
 
@@ -200,10 +207,14 @@ class YawRailStage(ABC, RailStage):
         Any or None
             The handle's data or nothing if not set.
         """
-        try:
-            return self.get_data(tag, allow_missing=False, **kwarg)
-        except KeyError:
-            return None
+        kwargs = kwargs.copy()
+        kwargs.update(allow_missing=True)
+        handle: DataHandle = self.get_handle(tag, **kwargs)
+        if handle.data is not None:
+            return handle.data
+        if handle_has_path(handle):
+            return handle.read()
+        return None
 
     def set_optional_data(self, tag: str, value: Any | None, **kwarg) -> None:
         """

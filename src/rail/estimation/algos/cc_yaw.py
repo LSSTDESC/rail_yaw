@@ -28,7 +28,6 @@ from rail.yaw_rail.summarize import (
     config_yaw_resampling,
     redshift_data_to_qp,
 )
-from rail.yaw_rail.utils import handle_has_path
 from rail.yaw_rail.logging import yaw_logged
 from rail.yaw_rail.stage import YawRailStage
 
@@ -132,31 +131,44 @@ class YawCacheCreate(
         self.run()
         return self.get_handle("cache")
 
+    @staticmethod
+    def _get_path_or_data(handle: DataHandle) -> str | DataFrame:
+        """
+        Get a valid data source from a handle for the YAW catalog loader.
+
+        The function assumes that either the data or path attributes are set.
+        """
+        if handle.data is None:  # ceci: no data set but have data path
+            result = handle.path
+        else:  # notebook: have not path but actual data loaded
+            result = handle.data
+        return result
+
     @yaw_logged
     def run(self) -> None:
         config = self.get_config_dict()
 
-        patch_source: YawCacheHandle | None = self.get_optional_handle("patch_source")
-        if patch_source is not None:  # stage input takes precedence over config
-            patch_centers = patch_source.data.get_patch_centers()
-        elif config["patch_file"] is None:
-            patch_centers = None
-        else:
-            patch_centers = patch_centers_from_file(config["patch_file"])
+        try:  # stage input takes precedence over config options
+            patch_centers = self.get_optional_data("patch_source").get_patch_centers()
+        except AttributeError:  # patch_source not set, i.e. data is None
+            if config["patch_file"] is None:
+                patch_centers = None
+            else:
+                patch_centers = patch_centers_from_file(config["patch_file"])
 
         cache = YawCache.create(config["path"], overwrite=config["overwrite"])
 
-        rand: TableHandle | None = self.get_optional_handle("rand")
-        if rand is not None:
+        handle_rand: TableHandle | None = self.get_optional_handle("rand")
+        if handle_rand is not None:
             cache.rand.set(
-                source=rand.path if handle_has_path(rand) else rand.read(),
+                source=self._get_path_or_data(handle_rand),
                 patch_centers=patch_centers,
                 **self.get_algo_config_dict(),
             )
 
-        data: TableHandle = self.get_handle("data")
+        handle_data: TableHandle = self.get_handle("data", allow_missing=True)
         cache.data.set(
-            source=data.path if handle_has_path(data) else data.read(),
+            source=self._get_path_or_data(handle_data),
             patch_centers=patch_centers,
             **self.get_algo_config_dict(),
         )
@@ -212,7 +224,7 @@ class YawAutoCorrelate(
 
     @yaw_logged
     def run(self) -> None:
-        cache_sample: YawCache = self.get_data("sample")
+        cache_sample: YawCache = self.get_data("sample", allow_missing=True)
         data = cache_sample.data.get()
         rand = cache_sample.rand.get()
 
@@ -285,12 +297,13 @@ class YawCrossCorrelate(
         tag: Literal["reference", "unknown"],
     ) -> tuple[ScipyCatalog, ScipyCatalog | None]:
         """Get the catalog(s) from the given input cache handle"""
-        cache: YawCache = self.get_data(tag)
+        cache: YawCache = self.get_data(tag, allow_missing=True)
         data = cache.data.get()
         try:
-            return data, cache.rand.get()
+            rand = cache.rand.get()
         except FileNotFoundError:
-            return data, None
+            rand = None
+        return data, rand
 
     @yaw_logged
     def run(self) -> None:
@@ -389,7 +402,7 @@ class YawSummarize(
 
     @yaw_logged
     def run(self) -> None:
-        cross_corr: CorrFunc = self.get_data("cross_corr")
+        cross_corr: CorrFunc = self.get_data("cross_corr", allow_missing=True)
         ref_corr: CorrFunc | None = self.get_optional_data("auto_corr_ref")
         unk_corr: CorrFunc | None = self.get_optional_data("auto_corr_unk")
 

@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # This script produces a pipeline file akin to the yet_another_wizz example notebook
 #
 
 # pylint: skip-file
 import os
+from shutil import rmtree
 
 from yaw import UniformRandoms
 
@@ -22,7 +23,8 @@ except NameError:
     from rail.estimation.algos.cc_yaw import *
 
 
-ROOT = "run"
+DATA = "data"
+LOGS = "logs"
 VERBOSE = "debug"  # verbosity level of built-in logger, disable with "error"
 
 # configuration for the correlation measurements
@@ -71,7 +73,7 @@ class YawPipeline(FixedRailPipeline):
 
         self.cache_ref = YawCacheCreate.build(
             aliases=create_yaw_cache_alias("ref"),
-            path=os.path.join(ROOT, "test_ref"),
+            path=os.path.join(DATA, "test_ref"),
             overwrite=True,
             ra_name="ra",
             dec_name="dec",
@@ -85,11 +87,11 @@ class YawPipeline(FixedRailPipeline):
                 patch_source=self.cache_ref.io.cache,
             ),
             aliases=create_yaw_cache_alias("unk"),
-            path=os.path.join(ROOT, "test_unk"),
+            path=os.path.join(DATA, "test_unk"),
             overwrite=True,
             ra_name="ra",
             dec_name="dec",
-            patches=os.path.join(ROOT, "test_ref"),
+            patches=os.path.join(DATA, "test_ref"),
             verbose=VERBOSE,
         )
 
@@ -118,9 +120,11 @@ class YawPipeline(FixedRailPipeline):
 
 
 if __name__ == "__main__":
-    if not os.path.exists(ROOT):
-        os.makedirs(ROOT)
-    data_path, rand_path = create_datasets(ROOT)
+    for folder in (DATA, LOGS):
+        if os.path.exists(folder):
+            rmtree(folder)
+        os.mkdir(folder)
+    data_path, rand_path = create_datasets(DATA)
 
     pipe = YawPipeline()
     pipe.initialize(
@@ -128,11 +132,11 @@ if __name__ == "__main__":
             data_ref=data_path,
             rand_ref=rand_path,
             data_unk=data_path,
-            rand_unk="/dev/null",
-            patch_source_ref="/dev/null",
-            auto_corr_unk="/dev/null",
+            rand_unk="none",
+            patch_source_ref="none",
+            auto_corr_unk="none",
         ),
-        run_config=dict(output_dir=ROOT, log_dir=ROOT, resume=False),
+        run_config=dict(output_dir=DATA, log_dir=LOGS, resume=False),
         stages_config=None,
     )
-    pipe.save(os.path.join(ROOT, "yaw_pipeline.yml"), site_name="local")
+    pipe.save("yaw_pipeline.yml", site_name="local")

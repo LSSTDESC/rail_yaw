@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ceci.stage import StageParameter
 from pandas import DataFrame
-from pytest import raises
+from pytest import mark, raises
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 
@@ -39,6 +39,17 @@ def make_test_handle() -> TableHandle:
     return TableHandle("test_tag", data=DataFrame(data))
 
 
+@mark.parametrize(
+    "value,expect", [("/some/path", True), ("None", False), (None, False)]
+)
+def test_handle_has_path(value, expect):
+    class DummyHandle:
+        path = value
+
+    dummy = DummyHandle()
+    assert stage.handle_has_path(dummy) == expect
+
+
 class TestYawRailStage:
     def test_init_subclass(self):
         assert StageTester.name == StageTester.__name__
@@ -69,9 +80,9 @@ class TestYawRailStage:
         test_stage = StageMakerAliased.make_stage()
         assert test_stage.get_optional_data("input") is None
 
-        test_stage.add_data("input", make_test_handle())
+        test_stage.add_data("input", make_test_handle().data)
         handle = test_stage.get_optional_data("input")
-        assert isinstance(handle.data, DataFrame)
+        assert isinstance(handle, DataFrame)
 
     def test_set_optional_data(self):
         test_stage = StageMakerAliased.make_stage()
