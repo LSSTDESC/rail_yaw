@@ -56,7 +56,6 @@ cache_unk:
   patch_file: null
   patch_name: null
   patch_source: None
-  patches: data/test_ref
   path: data/test_unk
   ra_name: ra
   rand: None

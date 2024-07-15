@@ -91,7 +91,6 @@ class YawPipeline(FixedRailPipeline):
             overwrite=True,
             ra_name="ra",
             dec_name="dec",
-            patches=os.path.join(DATA, "test_ref"),
             verbose=VERBOSE,
         )
 

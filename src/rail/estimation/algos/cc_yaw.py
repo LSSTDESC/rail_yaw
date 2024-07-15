@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import warnings
+from abc import abstractmethod
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal
 
-from yaw import RedshiftData, ResamplingConfig, autocorrelate, crosscorrelate
+from yaw import Configuration, RedshiftData, ResamplingConfig, autocorrelate, crosscorrelate
 
 from rail.core.data import DataHandle, QPHandle, TableHandle
 from rail.yaw_rail.cache import (
@@ -16,7 +17,6 @@ from rail.yaw_rail.cache import (
     patch_centers_from_file,
 )
 from rail.yaw_rail.correlation import (
-    YawBaseCorrelate,
     YawCorrFuncHandle,
     config_yaw_backend,
     config_yaw_scales,
@@ -175,6 +175,23 @@ class YawCacheCreate(
         )
 
         self.add_data("cache", cache)
+
+
+class YawBaseCorrelate(YawRailStage):
+    """Base class for correlation measurement stages."""
+
+    inputs: list[tuple[str, YawCacheHandle]]
+    outputs = [
+        ("output", YawCorrFuncHandle),
+    ]
+
+    def __init__(self, args, comm=None):
+        super().__init__(args, comm=comm)
+        self.yaw_config = Configuration.create(**self.get_algo_config_dict())
+
+    @abstractmethod
+    def correlate(self, *inputs: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
+        pass  # pragma: no cover
 
 
 class YawAutoCorrelate(

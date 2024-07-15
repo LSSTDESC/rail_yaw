@@ -8,16 +8,14 @@ from which the final correlation amplitudes are computed.
 
 from __future__ import annotations
 
-from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 import h5py
-from yaw import Configuration, CorrFunc
+from yaw import CorrFunc
 
 from ceci.stage import StageParameter
 from rail.core.data import DataHandle
-from rail.yaw_rail.cache import YawCacheHandle
-from rail.yaw_rail.stage import YawRailStage, create_param
+from rail.yaw_rail.stage import create_param
 
 if TYPE_CHECKING:  # pragma: no cover
     from rail.yaw_rail.cache import YawCache
@@ -75,18 +73,3 @@ class YawCorrFuncHandle(DataHandle):
     @classmethod
     def _write(cls, data: CorrFunc, path: str, **kwargs) -> None:
         data.to_file(path)
-
-
-class YawBaseCorrelate(YawRailStage):
-    """Base class for correlation measurement stages."""
-
-    inputs: list[tuple[str, YawCacheHandle]]
-    outputs: list[tuple[str, YawCorrFuncHandle]]
-
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
-        self.yaw_config = Configuration.create(**self.get_algo_config_dict())
-
-    @abstractmethod
-    def correlate(self, *inputs: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
-        pass  # pragma: no cover
