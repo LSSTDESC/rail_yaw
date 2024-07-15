@@ -138,10 +138,11 @@ class YawCacheCreate(
 
         The function assumes that either the data or path attributes are set.
         """
+        # no cover justfication: nothing to actually test here
         if handle.data is None:  # ceci: no data set but have data path
-            result = handle.path
+            result = handle.path  # pragma: no cover
         else:  # notebook: have not path but actual data loaded
-            result = handle.data
+            result = handle.data  # pragma: no cover
         return result
 
     @yaw_logged

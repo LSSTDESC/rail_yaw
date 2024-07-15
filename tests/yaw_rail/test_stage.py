@@ -76,13 +76,22 @@ class TestYawRailStage:
         test_stage.add_handle("input", make_test_handle())
         test_stage.get_handle("input")
 
-    def test_get_optional_data(self):
+    def test_get_optional_data(self, tmp_path):
         test_stage = StageMakerAliased.make_stage()
         assert test_stage.get_optional_data("input") is None
 
-        test_stage.add_data("input", make_test_handle().data)
-        handle = test_stage.get_optional_data("input")
-        assert isinstance(handle, DataFrame)
+        handle = make_test_handle()
+        test_stage.add_data("input", handle.data)
+        data = test_stage.get_optional_data("input")
+        assert isinstance(data, DataFrame)
+
+        path = str(tmp_path / "data.csv")
+        data.to_csv(path)
+        # manually "unload" the data
+        handle.data = None
+        handle.path = path
+        data2 = test_stage.get_optional_data("input")
+        assert isinstance(data2, DataFrame)
 
     def test_set_optional_data(self):
         test_stage = StageMakerAliased.make_stage()
