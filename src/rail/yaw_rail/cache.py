@@ -481,6 +481,7 @@ class YawCacheHandle(DataHandle):
     """
 
     data: YawCache
+    suffix = "path"
 
     @classmethod
     def _open(cls, path: str, **kwargs) -> TextIO:

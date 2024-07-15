@@ -91,6 +91,7 @@ class YawRedshiftDataHandle(DataHandle):
     """
 
     data: RedshiftData
+    suffix = "pkl"
 
     @classmethod
     def _open(cls, path: str, **kwargs) -> TextIO:

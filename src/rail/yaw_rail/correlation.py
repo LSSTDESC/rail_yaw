@@ -61,6 +61,7 @@ class YawCorrFuncHandle(DataHandle):
     """
 
     data: CorrFunc
+    suffix = "hdf5"
 
     @classmethod
     def _open(cls, path: str, **kwargs) -> h5py.File:
