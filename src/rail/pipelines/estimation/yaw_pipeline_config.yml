@@ -89,7 +89,6 @@ summarize:
     auto_corr_ref: output_auto_corr
     cross_corr: output_cross_corr
     output: output_summarize
-    yaw_cc: yaw_cc_summarize
   auto_corr_ref: None
   auto_corr_unk: None
   config: null

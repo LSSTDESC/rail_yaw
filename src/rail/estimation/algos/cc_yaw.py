@@ -12,7 +12,7 @@ from yaw import (
     crosscorrelate,
 )
 
-from rail.core.data import DataHandle, QPHandle, TableHandle
+from rail.core.data import DataHandle, TableHandle
 from rail.yaw_rail.cache import (
     YawCache,
     YawCacheHandle,
@@ -31,7 +31,6 @@ from rail.yaw_rail.summarize import (
     YawRedshiftDataHandle,
     config_yaw_est,
     config_yaw_resampling,
-    redshift_data_to_qp,
 )
 from rail.yaw_rail.logging import yaw_logged
 from rail.yaw_rail.stage import YawRailStage
@@ -357,8 +356,7 @@ class YawSummarize(
         ("auto_corr_unk", YawCorrFuncHandle),
     ]
     outputs = [
-        ("output", QPHandle),
-        ("yaw_cc", YawRedshiftDataHandle),
+        ("output", YawRedshiftDataHandle),
     ]
 
     def __init__(self, args, comm=None):
@@ -402,7 +400,7 @@ class YawSummarize(
         self.set_optional_data("auto_corr_unk", auto_corr_unk)
 
         self.run()
-        return {name: self.get_handle(name) for name, _ in self.outputs}
+        return self.get_handle("output")
 
     @yaw_logged
     def run(self) -> None:
@@ -417,7 +415,5 @@ class YawSummarize(
             config=ResamplingConfig(),
             **self.get_algo_config_dict(exclude=config_yaw_resampling),
         )
-        ensemble = redshift_data_to_qp(nz_cc)
 
-        self.add_data("output", ensemble)
-        self.add_data("yaw_cc", nz_cc)
+        self.add_data("output", nz_cc)
