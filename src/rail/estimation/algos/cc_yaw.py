@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import warnings
-from abc import abstractmethod
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Literal
 
-from yaw import Configuration, RedshiftData, ResamplingConfig, autocorrelate, crosscorrelate
+from yaw import (
+    Configuration,
+    RedshiftData,
+    ResamplingConfig,
+    autocorrelate,
+    crosscorrelate,
+)
 
 from rail.core.data import DataHandle, QPHandle, TableHandle
 from rail.yaw_rail.cache import (
@@ -93,7 +98,7 @@ class YawCacheCreate(
         ("patch_source", YawCacheHandle),
     ]
     outputs = [
-        ("cache", YawCacheHandle),
+        ("output", YawCacheHandle),
     ]
 
     def create(
@@ -129,7 +134,7 @@ class YawCacheCreate(
         self.set_optional_data("patch_source", patch_source)
 
         self.run()
-        return self.get_handle("cache")
+        return self.get_handle("output")
 
     @staticmethod
     def _get_path_or_data(handle: DataHandle) -> str | DataFrame:
@@ -174,28 +179,11 @@ class YawCacheCreate(
             **self.get_algo_config_dict(),
         )
 
-        self.add_data("cache", cache)
-
-
-class YawBaseCorrelate(YawRailStage):
-    """Base class for correlation measurement stages."""
-
-    inputs: list[tuple[str, YawCacheHandle]]
-    outputs = [
-        ("output", YawCorrFuncHandle),
-    ]
-
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
-        self.yaw_config = Configuration.create(**self.get_algo_config_dict())
-
-    @abstractmethod
-    def correlate(self, *inputs: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
-        pass  # pragma: no cover
+        self.add_data("output", cache)
 
 
 class YawAutoCorrelate(
-    YawBaseCorrelate,
+    YawRailStage,
     config_items=dict(
         **config_yaw_scales,
         **config_yaw_zbins,
@@ -215,12 +203,10 @@ class YawAutoCorrelate(
         ("sample", YawCacheHandle),
     ]
     outputs = [
-        ("auto_corr", YawCorrFuncHandle),
+        ("output", YawCorrFuncHandle),
     ]
 
-    def correlate(  # pylint: disable=W0221
-        self, sample: YawCacheHandle | YawCache
-    ) -> YawCorrFuncHandle:
+    def correlate(self, sample: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
         """
         Measure the angular autocorrelation amplitude in bins of redshift.
 
@@ -238,7 +224,7 @@ class YawAutoCorrelate(
         self.set_data("sample", sample)
 
         self.run()
-        return self.get_handle("auto_corr")
+        return self.get_handle("output")
 
     @yaw_logged
     def run(self) -> None:
@@ -249,17 +235,17 @@ class YawAutoCorrelate(
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=FutureWarning)
             corr = autocorrelate(
-                config=self.yaw_config,
+                config=Configuration.create(**self.get_algo_config_dict()),
                 data=data,
                 random=rand,
                 compute_rr=True,
             )
 
-        self.add_data("auto_corr", corr)
+        self.add_data("output", corr)
 
 
 class YawCrossCorrelate(
-    YawBaseCorrelate,
+    YawRailStage,
     config_items=dict(
         **config_yaw_scales,
         **config_yaw_zbins,
@@ -281,10 +267,10 @@ class YawCrossCorrelate(
         ("unknown", YawCacheHandle),
     ]
     outputs = [
-        ("cross_corr", YawCorrFuncHandle),
+        ("output", YawCorrFuncHandle),
     ]
 
-    def correlate(  # pylint: disable=W0221
+    def correlate(
         self, reference: YawCacheHandle | YawCache, unknown: YawCacheHandle | YawCache
     ) -> YawCorrFuncHandle:
         """
@@ -308,7 +294,7 @@ class YawCrossCorrelate(
         self.set_data("unknown", unknown)
 
         self.run()
-        return self.get_handle("cross_corr")
+        return self.get_handle("output")
 
     def _get_catalogs(
         self,
@@ -333,14 +319,14 @@ class YawCrossCorrelate(
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=FutureWarning)
             corr = crosscorrelate(
-                config=self.yaw_config,
+                config=Configuration.create(**self.get_algo_config_dict()),
                 reference=data_ref,
                 unknown=data_unk,
                 ref_rand=rand_ref,
                 unk_rand=rand_unk,
             )
 
-        self.add_data("cross_corr", corr)
+        self.add_data("output", corr)
 
 
 class YawSummarize(

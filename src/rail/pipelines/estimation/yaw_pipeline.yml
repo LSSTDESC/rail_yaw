@@ -24,13 +24,13 @@ stages:
   nprocess: 1
 - classname: YawAutoCorrelate
   module_name: rail.estimation.algos.cc_yaw
-  name: autocorr
+  name: auto_corr
   nprocess: 1
 - classname: YawCrossCorrelate
   module_name: rail.estimation.algos.cc_yaw
-  name: crosscorr
+  name: cross_corr
   nprocess: 1
 - classname: YawSummarize
   module_name: rail.estimation.algos.cc_yaw
-  name: estimate
+  name: summarize
   nprocess: 1

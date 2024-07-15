@@ -101,20 +101,22 @@ def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
         zbin_num=2,
     )
 
-    w_ss = YawAutoCorrelate.make_stage(**corr_config).correlate(sample=cache_ref)
+    w_ss = YawAutoCorrelate.make_stage(name="auto_corr", **corr_config).correlate(
+        sample=cache_ref
+    )
     w_ss.data.sample().to_files(tmp_path / "wss")
     assert_cols_match(write_expect_wss(tmp_path), tmp_path / "wss.dat", ignore_cols=[3])
 
-    w_sp = YawCrossCorrelate.make_stage(**corr_config).correlate(
+    w_sp = YawCrossCorrelate.make_stage(name="cross_corr", **corr_config).correlate(
         reference=cache_ref, unknown=cache_unk
     )
     w_sp.data.sample().to_files(tmp_path / "wsp")
     assert w_sp.data.rr is None
     assert_cols_match(write_expect_wsp(tmp_path), tmp_path / "wsp.dat", ignore_cols=[3])
 
-    ncc = YawSummarize.make_stage().summarize(cross_corr=w_sp, auto_corr_ref=w_ss)[
-        "yaw_cc"
-    ]
+    ncc = YawSummarize.make_stage(name="summarize").summarize(
+        cross_corr=w_sp, auto_corr_ref=w_ss
+    )["yaw_cc"]
     ncc.data.to_files(tmp_path / "ncc")
     assert_cols_match(write_expect_ncc(tmp_path), tmp_path / "ncc.dat", ignore_cols=[3])
 

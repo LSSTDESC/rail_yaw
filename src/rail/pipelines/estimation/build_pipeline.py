@@ -84,7 +84,7 @@ class YawPipeline(FixedRailPipeline):
 
         self.cache_unk = YawCacheCreate.build(
             connections=dict(
-                patch_source=self.cache_ref.io.cache,
+                patch_source=self.cache_ref.io.output,
             ),
             aliases=create_yaw_cache_alias("unk"),
             path=os.path.join(DATA, "test_unk"),
@@ -94,25 +94,25 @@ class YawPipeline(FixedRailPipeline):
             verbose=VERBOSE,
         )
 
-        self.autocorr = YawAutoCorrelate.build(
+        self.auto_corr = YawAutoCorrelate.build(
             connections=dict(
-                sample=self.cache_ref.io.cache,
+                sample=self.cache_ref.io.output,
             ),
             **corr_config,
         )
 
-        self.crosscorr = YawCrossCorrelate.build(
+        self.cross_corr = YawCrossCorrelate.build(
             connections=dict(
-                reference=self.cache_ref.io.cache,
-                unknown=self.cache_unk.io.cache,
+                reference=self.cache_ref.io.output,
+                unknown=self.cache_unk.io.output,
             ),
             **corr_config,
         )
 
-        self.estimate = YawSummarize.build(
+        self.summarize = YawSummarize.build(
             connections=dict(
-                cross_corr=self.crosscorr.io.cross_corr,
-                auto_corr_ref=self.autocorr.io.auto_corr,
+                cross_corr=self.cross_corr.io.output,
+                auto_corr_ref=self.auto_corr.io.output,
             ),
             verbose=VERBOSE,
         )

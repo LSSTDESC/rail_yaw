@@ -1,11 +1,11 @@
-autocorr:
+auto_corr:
   aliases:
-    auto_corr: auto_corr_autocorr
-    sample: cache_cache_ref
+    output: output_auto_corr
+    sample: output_cache_ref
   config: null
   crosspatch: true
   method: linear
-  name: autocorr
+  name: auto_corr
   output_mode: default
   rbin_num: 50
   rmax: 1000.0
@@ -20,8 +20,8 @@ autocorr:
   zmin: 0.0
 cache_ref:
   aliases:
-    cache: cache_cache_ref
     data: data_ref
+    output: output_cache_ref
     patch_source: patch_source_ref
     rand: rand_ref
   config: null
@@ -42,9 +42,9 @@ cache_ref:
   weight_name: null
 cache_unk:
   aliases:
-    cache: cache_cache_unk
     data: data_unk
-    patch_source: cache_cache_ref
+    output: output_cache_unk
+    patch_source: output_cache_ref
     rand: rand_unk
   config: null
   data: None
@@ -62,15 +62,15 @@ cache_unk:
   redshift_name: null
   verbose: debug
   weight_name: null
-crosscorr:
+cross_corr:
   aliases:
-    cross_corr: cross_corr_crosscorr
-    reference: cache_cache_ref
-    unknown: cache_cache_unk
+    output: output_cross_corr
+    reference: output_cache_ref
+    unknown: output_cache_unk
   config: null
   crosspatch: true
   method: linear
-  name: crosscorr
+  name: cross_corr
   output_mode: default
   rbin_num: 50
   reference: None
@@ -84,19 +84,19 @@ crosscorr:
   zbins: null
   zmax: 3.0
   zmin: 0.0
-estimate:
+summarize:
   aliases:
-    auto_corr_ref: auto_corr_autocorr
-    cross_corr: cross_corr_crosscorr
-    output: output_estimate
-    yaw_cc: yaw_cc_estimate
+    auto_corr_ref: output_auto_corr
+    cross_corr: output_cross_corr
+    output: output_summarize
+    yaw_cc: yaw_cc_summarize
   auto_corr_ref: None
   auto_corr_unk: None
   config: null
   cross_corr: None
   cross_est: null
   crosspatch: true
-  name: estimate
+  name: summarize
   output_mode: default
   ref_est: null
   unk_est: null
