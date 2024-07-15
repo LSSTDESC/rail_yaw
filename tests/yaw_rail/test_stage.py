@@ -85,13 +85,12 @@ class TestYawRailStage:
         data = test_stage.get_optional_data("input")
         assert isinstance(data, DataFrame)
 
-        path = str(tmp_path / "data.csv")
-        data.to_csv(path)
-        # manually "unload" the data
-        handle.data = None
-        handle.path = path
-        data2 = test_stage.get_optional_data("input")
-        assert isinstance(data2, DataFrame)
+        path = str(tmp_path / "data.parquet")
+        data.to_parquet(path)
+        test_stage2 = StageMakerAliased.make_stage()
+        test_stage2.add_handle("input", path=path)
+        data2 = test_stage2.get_optional_data("input")
+        assert isinstance(data2.to_pandas(), DataFrame)
 
     def test_set_optional_data(self):
         test_stage = StageMakerAliased.make_stage()
