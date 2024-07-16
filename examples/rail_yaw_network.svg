@@ -29,9 +29,9 @@
      showgrid="false"
      showguides="true"
      inkscape:lockguides="true"
-     inkscape:zoom="0.49686598"
-     inkscape:cx="729.57299"
-     inkscape:cy="558.5007"
+     inkscape:zoom="0.66766095"
+     inkscape:cx="796.06273"
+     inkscape:cy="578.88663"
      inkscape:window-width="1470"
      inkscape:window-height="835"
      inkscape:window-x="0"
@@ -441,30 +441,38 @@
        id="g654"
        transform="translate(92.604168)">
       <g
-         id="g336-8-4"
-         style="fill:#e04534;fill-opacity:1"
-         transform="matrix(0.3219543,0,0,-0.34041412,108.67691,442.98982)">
+         id="g1530">
         <g
-           id="g338-3-6"
-           clip-path="url(#clipPath342-0-7)"
-           style="fill:#e04534;fill-opacity:1">
-          <path
-             d="m 42.53052,572.6641 h 225.9961 v 58.29297 H 42.53052 Z"
-             style="fill:#e04534;fill-opacity:1;fill-rule:nonzero;stroke:none"
-             id="path344-1-3" />
+           id="g336-8-4"
+           style="fill:#e04534;fill-opacity:1"
+           transform="matrix(0.36113602,0,0,-0.34041412,102.58303,442.98982)">
+          <g
+             id="g338-3-6"
+             clip-path="url(#clipPath342-0-7)"
+             style="fill:#e04534;fill-opacity:1">
+            <path
+               d="m 42.53052,572.6641 h 225.9961 v 58.29297 H 42.53052 Z"
+               style="fill:#e04534;fill-opacity:1;fill-rule:nonzero;stroke:none"
+               id="path344-1-3" />
+          </g>
         </g>
+        <text
+           xml:space="preserve"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:Helvetica;letter-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
+           x="158.83096"
+           y="235.54634"
+           id="text1382-0-32"><tspan
+             sodipodi:role="line"
+             id="tspan1380-6-71"
+             x="158.83096"
+             y="235.54634"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawRedshiftDataHandle</tspan><tspan
+             sodipodi:role="line"
+             x="158.83096"
+             y="244.36578"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+             id="tspan1522">(nz, samples, cov.)</tspan></text>
       </g>
-      <text
-         xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
-         x="142.48915"
-         y="240.5228"
-         id="text1382-0-32"><tspan
-           sodipodi:role="line"
-           id="tspan1380-6-71"
-           x="142.48915"
-           y="240.5228"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">QPHandle</tspan></text>
     </g>
     <g
        id="g661"
@@ -514,14 +522,19 @@
       <text
          xml:space="preserve"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-         x="311.55548"
-         y="200.96965"
+         x="309.82431"
+         y="195.89157"
          id="text1382-0-80"><tspan
            sodipodi:role="line"
            id="tspan1380-6-45"
-           x="311.55548"
-           y="200.96965"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawCorrFuncHandle</tspan></text>
+           x="309.82431"
+           y="195.89157"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawCorrFuncHandle</tspan><tspan
+           sodipodi:role="line"
+           x="309.82431"
+           y="204.71101"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+           id="tspan655">(paircounts per patch)</tspan></text>
     </g>
     <g
        id="g668"
@@ -542,15 +555,20 @@
       </g>
       <text
          xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
-         x="33.742989"
-         y="200.96965"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="66.154449"
+         y="195.89157"
          id="text1382-0-80-4"><tspan
            sodipodi:role="line"
            id="tspan1380-6-45-6"
-           x="33.742989"
-           y="200.96965"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawCorrFuncHandle</tspan></text>
+           x="66.154449"
+           y="195.89157"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawCorrFuncHandle</tspan><tspan
+           sodipodi:role="line"
+           x="66.154449"
+           y="204.71101"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+           id="tspan599">(paircounts per patch)</tspan></text>
     </g>
     <g
        id="g742">
@@ -628,15 +646,20 @@
       </g>
       <text
          xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
-         x="223.45578"
-         y="161.28387"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="251.43513"
+         y="156.20407"
          id="text1382-0-3"><tspan
            sodipodi:role="line"
            id="tspan1380-6-11"
-           x="223.45578"
-           y="161.28387"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawCacheHandle</tspan></text>
+           x="251.43513"
+           y="156.20407"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawCacheHandle</tspan><tspan
+           sodipodi:role="line"
+           x="251.43513"
+           y="165.02351"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+           id="tspan659">(cache path)</tspan></text>
     </g>
     <g
        id="g682"
@@ -657,15 +680,20 @@
       </g>
       <text
          xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:'Helvetica Bold';fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
-         x="38.247433"
-         y="121.59637"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:'Helvetica Bold';text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
+         x="66.226791"
+         y="116.51657"
          id="text1382-0-3-7"><tspan
            sodipodi:role="line"
            id="tspan1380-6-11-2"
-           x="38.247433"
-           y="121.59637"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawCacheHandle</tspan></text>
+           x="66.226791"
+           y="116.51657"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawCacheHandle</tspan><tspan
+           sodipodi:role="line"
+           x="66.226791"
+           y="125.33602"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+           id="tspan657">(cache path)</tspan></text>
     </g>
     <g
        id="g721"
@@ -830,81 +858,78 @@
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 66.145835,132.29167 v 16.53646"
        id="path805"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 158.75,171.97917 v 16.53646"
        id="path815"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 102.52604,158.75 16.53646,1e-5"
        id="path819"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 195.13021,198.4375 16.53646,1e-5"
        id="path821"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 251.35417,211.66667 v 16.53646"
        id="path823"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 307.57813,198.4375 -16.53646,1e-5"
        id="path825"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 343.95834,171.97917 v 16.53646"
        id="path827"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 343.95834,128.98438 v 16.53646"
        id="path829"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="M 343.95834,92.604169 V 109.14063"
        id="path831"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="M 343.95834,49.609379 V 66.145835"
        id="path833"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
-       d="m 251.35417,79.375005 52.91667,-3e-6"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
+       d="m 251.35417,49.609377 0,29.765626 52.91667,-1e-6"
        id="path837"
        inkscape:connector-type="polyline"
-       inkscape:connector-curvature="0" />
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccc" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#TriangleStart)"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 158.75,119.06251 v 26.45833"
        id="path841"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
-    <path
-       style="fill:none;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none"
-       d="m 251.35417,49.609379 v 29.765626 0"
-       id="path2232" />
     <text
        xml:space="preserve"
        style="font-style:normal;font-weight:normal;font-size:7.05556px;line-height:1.55;font-family:sans-serif;fill:#777777;fill-opacity:1;stroke:none;stroke-width:0.264583"
@@ -938,13 +963,13 @@
          y="87.334648"
          id="tspan4928">input</tspan></text>
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:3.17500019,2.11666679;marker-end:url(#TriangleStart);stroke-dashoffset:0"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:3.175, 2.11667;stroke-dashoffset:0;stroke-opacity:1;marker-end:url(#TriangleStart)"
        d="m 158.75,119.06251 -52.91666,-1e-5"
        id="path2482"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:none"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1"
        d="m 307.57813,119.0625 -148.82813,1e-5"
        id="path2486"
        inkscape:connector-type="polyline"
@@ -984,7 +1009,7 @@
            id="tspan8911-3-4">(unknown randoms)</tspan></text>
     </g>
     <path
-       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833334;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-dasharray:3.17500019,2.11666679;stroke-dashoffset:0"
+       style="fill:none;fill-rule:evenodd;stroke:#777777;stroke-width:1.05833;stroke-linecap:butt;stroke-linejoin:miter;stroke-dasharray:3.175, 2.11667;stroke-dashoffset:0;stroke-opacity:1"
        d="M 158.75,49.609376 V 79.375005 H 66.145835"
        id="path4821"
        inkscape:connector-type="orthogonal"

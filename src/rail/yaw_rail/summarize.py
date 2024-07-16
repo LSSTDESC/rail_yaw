@@ -12,11 +12,8 @@ correlation amplitudes and setting them to zero.
 from __future__ import annotations
 
 import pickle
-from functools import partial
 from typing import TextIO
 
-import numpy as np
-import qp
 from yaw import RedshiftData
 
 from ceci.config import StageParameter
@@ -47,30 +44,6 @@ config_yaw_resampling = {
     p: create_param("resampling", p)
     for p in ("crosspatch",)
 }
-
-clip_neg = partial(np.maximum, 0.0)
-nan_inf_to_num = partial(np.nan_to_num, nan=0.0, posinf=0.0, neginf=0.0)
-
-
-def clip_negative_values(nz: RedshiftData) -> RedshiftData:
-    """Replace all non-finite and negative values in a `yaw.RedshiftData`
-    instance with zeros."""
-    return RedshiftData(
-        binning=nz.get_binning(),
-        data=clip_neg(nan_inf_to_num(nz.data)),
-        samples=clip_neg(nan_inf_to_num(nz.samples)),
-        method=nz.method,
-        info=nz.info,
-    )
-
-
-def redshift_data_to_qp(nz: RedshiftData) -> qp.Ensemble:
-    """Convert a `yaw.RedshiftData` instance to a `qp.Ensemble` by clipping
-    negative values and normalising the spatial samples to PDFs."""
-    samples = clip_negative_values(nz).samples
-    for i, sample in enumerate(samples):
-        samples[i] = sample / np.trapz(sample, x=nz.mids)
-    return qp.Ensemble(qp.hist, data=dict(bins=nz.edges, pdfs=samples))
 
 
 class YawRedshiftDataHandle(DataHandle):
