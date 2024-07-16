@@ -9,7 +9,7 @@
    id="svg5"
    inkscape:version="1.2 (dc2aeda, 2022-05-15)"
    sodipodi:docname="rail_yaw_network.svg"
-   inkscape:export-filename="rail_yaw_network2.png"
+   inkscape:export-filename="rail_yaw_network.png"
    inkscape:export-xdpi="200"
    inkscape:export-ydpi="200"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -30,13 +30,13 @@
      showguides="true"
      inkscape:lockguides="true"
      inkscape:zoom="0.66766095"
-     inkscape:cx="796.06273"
+     inkscape:cx="797.5605"
      inkscape:cy="578.88663"
      inkscape:window-width="1470"
      inkscape:window-height="835"
      inkscape:window-x="0"
      inkscape:window-y="37"
-     inkscape:window-maximized="0"
+     inkscape:window-maximized="1"
      inkscape:current-layer="layer1">
     <sodipodi:guide
        position="66.145834,277.8125"
@@ -439,7 +439,7 @@
     </g>
     <g
        id="g654"
-       transform="translate(92.604168)">
+       transform="translate(97.031628)">
       <g
          id="g1530">
         <g
@@ -451,25 +451,25 @@
              clip-path="url(#clipPath342-0-7)"
              style="fill:#e04534;fill-opacity:1">
             <path
-               d="m 42.53052,572.6641 h 225.9961 v 58.29297 H 42.53052 Z"
-               style="fill:#e04534;fill-opacity:1;fill-rule:nonzero;stroke:none"
+               d="m 42.53052,572.6641 h 201.47649 v 58.29297 H 42.53052 Z"
+               style="fill:#e04534;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.944195"
                id="path344-1-3" />
           </g>
         </g>
         <text
            xml:space="preserve"
            style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;line-height:1.25;font-family:Helvetica;-inkscape-font-specification:Helvetica;letter-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.264583"
-           x="158.83096"
-           y="235.54634"
+           x="154.33115"
+           y="235.51878"
            id="text1382-0-32"><tspan
              sodipodi:role="line"
              id="tspan1380-6-71"
-             x="158.83096"
-             y="235.54634"
-             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">YawRedshiftDataHandle</tspan><tspan
+             x="154.33115"
+             y="235.51878"
+             style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583">ModelHandle</tspan><tspan
              sodipodi:role="line"
-             x="158.83096"
-             y="244.36578"
+             x="154.33115"
+             y="244.33823"
              style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:7.05556px;font-family:Helvetica;-inkscape-font-specification:Helvetica;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
              id="tspan1522">(nz, samples, cov.)</tspan></text>
       </g>

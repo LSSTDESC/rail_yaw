@@ -11,83 +11,19 @@ from __future__ import annotations
 import logging
 import os
 from shutil import rmtree
-from typing import TYPE_CHECKING, TextIO
 
 import numpy as np
+from pandas import DataFrame
 from yaw.catalogs import NewCatalog
-from yaw.core.coordinates import CoordSky
-
-from ceci.config import StageParameter
-from rail.core.data import DataHandle
-
-if TYPE_CHECKING:  # pragma: no cover
-    from pandas import DataFrame
-    from yaw.catalogs.scipy import ScipyCatalog
-    from yaw.core.coordinates import Coordinate
+from yaw.catalogs.scipy import ScipyCatalog
+from yaw.core.coordinates import Coordinate, CoordSky
 
 __all__ = [
     "YawCache",
-    "YawCacheHandle",
 ]
 
 
 logger = logging.getLogger(__name__)
-
-config_yaw_columns = dict(
-    ra_name=StageParameter(
-        str,
-        default="ra",
-        msg="column name of right ascension (in degrees)",
-    ),
-    dec_name=StageParameter(
-        str,
-        default="dec",
-        msg="column name of declination (in degrees)",
-    ),
-    redshift_name=StageParameter(
-        str,
-        required=False,
-        msg="column name of redshift",
-    ),
-    weight_name=StageParameter(
-        str,
-        required=False,
-        msg="column name of weight",
-    ),
-)
-"""Stage parameters to specify column names in the input data."""
-
-config_yaw_patches = dict(
-    patch_file=StageParameter(
-        str,
-        required=False,
-        msg="path to ASCII file that lists patch centers (one per line) as "
-        "pair of R.A./Dec. in radian, separated by a single space or tab",
-    ),
-    patch_name=StageParameter(
-        str,
-        required=False,
-        msg="column name of patch index (starting from 0)",
-    ),
-    n_patches=StageParameter(
-        int,
-        required=False,
-        msg="number of spatial patches to create using knn on coordinates of randoms",
-    ),
-)
-"""Optional stage parameters to specify the patch creation stragegy."""
-
-config_cache = dict(
-    path=StageParameter(
-        str, required=True, msg="path to cache directory, must not exist"
-    ),
-    overwrite=StageParameter(
-        bool,
-        required=False,
-        msg="overwrite the path if it is an existing cache directory",
-    ),
-)
-"""Stage parameters to specify the cache directory."""
 
 
 def normalise_path(path: str) -> str:
@@ -461,39 +397,3 @@ class YawCache:
         """Delete the entire cache directy."""
         logger.info("dropping cache directory '%s'", self.path)
         rmtree(self.path)
-
-
-class YawCacheHandle(DataHandle):
-    """
-    Class to act as a handle for a `YawCache` instance, associating it with a
-    file and providing tools to read & write it to that file.
-
-    Parameters
-    ----------
-    tag : str
-        The tag under which this data handle can be found in the store.
-    data : any or None
-        The associated data.
-    path : str or None
-        The path to the associated file.
-    creator : str or None
-        The name of the stage that created this data handle.
-    """
-
-    data: YawCache
-    suffix = "path"
-
-    @classmethod
-    def _open(cls, path: str, **kwargs) -> TextIO:
-        return open(path, **kwargs)
-
-    @classmethod
-    def _read(cls, path: str, **kwargs) -> YawCache:
-        with cls._open(path, **kwargs) as f:
-            path = f.read()
-        return YawCache(path)
-
-    @classmethod
-    def _write(cls, data: YawCache, path: str, **kwargs) -> None:
-        with cls._open(path, mode="w") as f:
-            f.write(data.path)

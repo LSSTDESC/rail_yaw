@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from yaw.config import ScalesConfig
-
 from ceci.stage import StageParameter
 from pandas import DataFrame
 from pytest import mark, raises
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 
-from rail.yaw_rail import stage
+from rail.yaw_rail import utils
 
 
 class StageTester(
-    stage.YawRailStage,
+    utils.YawRailStage,
     config_items=dict(test=StageParameter(dtype=int)),
 ):
     """__doc__"""
@@ -49,12 +47,7 @@ def test_handle_has_path(value, expect):
         path = value
 
     dummy = DummyHandle()
-    assert stage.handle_has_path(dummy) == expect
-
-
-def test_get_yaw_config_meta():
-    with raises(AttributeError, match=".*no attribute.*"):
-        stage.get_yaw_config_meta(ScalesConfig, "does_not_exist")
+    assert utils.handle_has_path(dummy) == expect
 
 
 class TestYawRailStage:

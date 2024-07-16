@@ -20,44 +20,35 @@ from __future__ import annotations
 
 import warnings
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
+from pandas import DataFrame
 from yaw import (
     Configuration,
+    CorrFunc,
     RedshiftData,
     ResamplingConfig,
     autocorrelate,
     crosscorrelate,
 )
+from yaw.catalogs.scipy import ScipyCatalog
 
-from rail.core.data import DataHandle, TableHandle
-from rail.yaw_rail.cache import (
-    YawCache,
-    YawCacheHandle,
-    config_cache,
-    config_yaw_columns,
-    config_yaw_patches,
-    patch_centers_from_file,
-)
-from rail.yaw_rail.correlation import (
-    YawCorrFuncHandle,
-    config_yaw_backend,
-    config_yaw_scales,
-    config_yaw_zbins,
-    warn_thread_num_deprecation,
-)
-from rail.yaw_rail.summarize import (
-    YawRedshiftDataHandle,
-    config_yaw_est,
-    config_yaw_resampling,
-)
-from rail.yaw_rail.logging import yaw_logged
-from rail.yaw_rail.stage import YawRailStage
+from rail.core.data import DataHandle, ModelHandle, TableHandle
+from rail.yaw_rail import stage_config
+from rail.yaw_rail.cache import YawCache, patch_centers_from_file
+from rail.yaw_rail.handles import YawCacheHandle, YawCorrFuncHandle
+from rail.yaw_rail.utils import YawRailStage, yaw_logged
 
-if TYPE_CHECKING:  # pragma: no cover
-    from pandas import DataFrame
-    from yaw import CorrFunc
-    from yaw.catalogs.scipy import ScipyCatalog
+
+def warn_thread_num_deprecation(config: dict):
+    """`thread_num` is deprecated when MPI backend is implemented."""
+    if config.get("thread_num", None) is not None:
+        warnings.warn(
+            "The 'thread_num' stage parameter is deprecated and will be removed "
+            "once the MPI parallelism is implemented.",
+            FutureWarning,
+            stacklevel=2,
+        )
 
 
 def create_yaw_cache_alias(suffix: str) -> dict[str, Any]:
@@ -85,9 +76,9 @@ def create_yaw_cache_alias(suffix: str) -> dict[str, Any]:
 class YawCacheCreate(
     YawRailStage,
     config_items=dict(
-        **config_cache,
-        **config_yaw_columns,
-        **config_yaw_patches,
+        **stage_config.cache,
+        **stage_config.yaw_columns,
+        **stage_config.yaw_patches,
     ),
 ):
     """
@@ -207,9 +198,9 @@ class YawCacheCreate(
 class YawAutoCorrelate(
     YawRailStage,
     config_items=dict(
-        **config_yaw_scales,
-        **config_yaw_zbins,
-        **config_yaw_backend,
+        **stage_config.yaw_scales,
+        **stage_config.yaw_zbins,
+        **stage_config.yaw_backend,
     ),
 ):
     """
@@ -273,9 +264,9 @@ class YawAutoCorrelate(
 class YawCrossCorrelate(
     YawRailStage,
     config_items=dict(
-        **config_yaw_scales,
-        **config_yaw_zbins,
-        **config_yaw_backend,
+        **stage_config.yaw_scales,
+        **stage_config.yaw_zbins,
+        **stage_config.yaw_backend,
     ),
 ):
     """
@@ -362,8 +353,8 @@ class YawCrossCorrelate(
 class YawSummarize(
     YawRailStage,
     config_items=dict(
-        **config_yaw_est,
-        **config_yaw_resampling,
+        **stage_config.yaw_est,
+        **stage_config.yaw_resampling,
     ),
 ):
     """
@@ -386,12 +377,12 @@ class YawSummarize(
         ("auto_corr_unk", YawCorrFuncHandle),
     ]
     outputs = [
-        ("output", YawRedshiftDataHandle),
+        ("output", ModelHandle),
     ]
 
     def __init__(self, args, comm=None):
         super().__init__(args, comm=comm)
-        config = {p: self.config_options[p].value for p in config_yaw_resampling}
+        config = {p: self.config_options[p].value for p in stage_config.yaw_resampling}
         self.yaw_config = ResamplingConfig.create(**config)
 
     def summarize(
@@ -440,7 +431,7 @@ class YawSummarize(
             ref_corr=ref_corr,
             unk_corr=unk_corr,
             config=ResamplingConfig(),
-            **self.get_algo_config_dict(exclude=config_yaw_resampling),
+            **self.get_algo_config_dict(exclude=stage_config.yaw_resampling),
         )
 
         self.add_data("output", nz_cc)

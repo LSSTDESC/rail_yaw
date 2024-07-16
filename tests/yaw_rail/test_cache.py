@@ -246,12 +246,3 @@ class TestYawCache:
         assert str(path) in str(inst)  # test __str__()
         inst.drop()
         assert not path.exists()
-
-
-def test_TestYawCacheHandle(tmp_path):
-    path = tmp_path / "cache.json"
-    c = cache.YawCache.create(tmp_path / "cache")
-    handle = cache.YawCacheHandle("cache", c, path=path)
-
-    handle.write()  # ._write()
-    assert handle.read(force=True).path == c.path  # ._open(), ._read()
