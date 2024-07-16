@@ -1,101 +1,59 @@
 """
 This file implements a wrapper for a cache directory for *yet_another_wizz*
-catalogs. The cache is designed to hold a pair of data and (optional) random
-catalog. The patch center coordinates are enforced to be consistent.
-
-The cache is wrapped by two RAIL stages, one to create a new cache from input
-data tables, and one to delete the cache directory and its contents. They are
-managed through a special data handle that allows passing the directory path
-between RAIL stages to define inputs for the correlation function stages.
+catalogs. The cache is designed to hold a pair of a data and an (optional)
+random catalog. The patch center coordinates are enforced to be consistent
+within a cache. These caches are created by `YawCacheCreate`, but must currently
+be removed manually by the user when they are no longer needed.
 """
 
 from __future__ import annotations
 
 import logging
 import os
-from itertools import chain
 from shutil import rmtree
-from typing import TYPE_CHECKING, Any, TextIO
 
-from yaw import NewCatalog
-
-from ceci.config import StageParameter
-from rail.core.data import DataHandle, TableHandle
-from rail.yaw_rail.logging import yaw_logged
-from rail.yaw_rail.stage import YawRailStage
-
-if TYPE_CHECKING:  # pragma: no cover
-    from pandas import DataFrame
-    from yaw.catalogs.scipy import ScipyCatalog
-    from yaw.core.coordinates import Coordinate, CoordSky
+import numpy as np
+from pandas import DataFrame
+from yaw.catalogs import NewCatalog
+from yaw.catalogs.scipy import ScipyCatalog
+from yaw.core.coordinates import Coordinate, CoordSky
 
 __all__ = [
     "YawCache",
-    "YawCacheCreate",
-    "YawCacheDrop",
-    "YawCacheHandle",
 ]
 
 
 logger = logging.getLogger(__name__)
-
-config_yaw_columns = dict(
-    ra_name=StageParameter(
-        str,
-        default="ra",
-        msg="column name of right ascension (in degrees)",
-    ),
-    dec_name=StageParameter(
-        str,
-        default="dec",
-        msg="column name of declination (in degrees)",
-    ),
-    redshift_name=StageParameter(
-        str,
-        required=False,
-        msg="column name of redshift",
-    ),
-    weight_name=StageParameter(
-        str,
-        required=False,
-        msg="column name of weight",
-    ),
-)
-
-config_yaw_patches = dict(
-    patches=StageParameter(
-        str,
-        required=False,
-        msg="path to cache which provides the patch centers to construct consistent datasets",
-    ),
-    patch_name=StageParameter(
-        str,
-        required=False,
-        msg="column name of patch index (starting from 0)",
-    ),
-    n_patches=StageParameter(
-        int,
-        required=False,
-        msg="number of spatial patches to create using knn on coordinates of randoms",
-    ),
-)
-
-config_cache = dict(
-    path=StageParameter(
-        str, required=True, msg="path to cache directory, must not exist"
-    ),
-    overwrite=StageParameter(
-        bool,
-        required=False,
-        msg="overwrite the path if it is an existing cache directory",
-    ),
-)
 
 
 def normalise_path(path: str) -> str:
     """Substitute UNIX style home directories and environment variables in path
     names."""
     return os.path.expandvars(os.path.expanduser(path))
+
+
+def patch_centers_from_file(path: str) -> CoordSky:
+    """
+    Load a list of patch centers from a file.
+
+    Patch centers are expected to be listed line-by-line as pairs of R.A./Dec.
+    in radian, separated by a single space or tab.
+
+    Parameters
+    ----------
+    path: str
+        Path to input file.
+
+    Returns
+    -------
+    CoordSky
+        List of patch centers read from file.
+    """
+    coords = np.loadtxt(path, ndmin=2)
+    try:
+        return CoordSky.from_array(coords)
+    except Exception as err:
+        raise ValueError("invalid coordinate file format or schema") from err
 
 
 def get_patch_method(
@@ -127,7 +85,8 @@ def get_patch_method(
     ValueError
         If all parameter values are set to `None`.
     """
-    # preferred order, "create" should be the last resort
+    # NOTE: "consistent" referes to the consistency of patch centers of two
+    # catalogs created with a particular patch creation method.
     if patch_centers is not None:  # deterministic and consistent
         return patch_centers
     if patch_name is not None:  # deterministic but assumes consistency
@@ -332,7 +291,7 @@ class YawCache:
         has to be created with the `create` method.
     """
 
-    _flag_path = ".yaw_cache"  # file to a cache directory, safeguard for .drop()
+    _flag_path = ".yaw_cache"  # file to mark a valid cache directory
     path: str
     """Path at which the data and random catalogues are cached."""
     data: YawCatalog
@@ -389,6 +348,7 @@ class YawCache:
 
         logger.info("creating new cache directory '%s'", normalised)
         os.makedirs(normalised)
+        # create the flag file
         with open(os.path.join(normalised, cls._flag_path), "w"):
             pass
         return cls(path)
@@ -403,7 +363,7 @@ class YawCache:
         Returns
         -------
         CoordSky
-            The patch center coordinates in degrees as
+            The patch center coordinates in radian as
             `yaw.core.coordinates.CoordSky` instance.
 
         Raises
@@ -437,179 +397,3 @@ class YawCache:
         """Delete the entire cache directy."""
         logger.info("dropping cache directory '%s'", self.path)
         rmtree(self.path)
-
-
-class YawCacheHandle(DataHandle):
-    """
-    Class to act as a handle for a `YawCache` instance, associating it with a
-    file and providing tools to read & write it to that file.
-
-    Parameters
-    ----------
-    tag : str
-        The tag under which this data handle can be found in the store.
-    data : any or None
-        The associated data.
-    path : str or None
-        The path to the associated file.
-    creator : str or None
-        The name of the stage that created this data handle.
-    """
-
-    data: YawCache
-
-    @classmethod
-    def _open(cls, path: str, **kwargs) -> TextIO:
-        return open(path, **kwargs)
-
-    @classmethod
-    def _read(cls, path: str, **kwargs) -> YawCache:
-        with cls._open(path, **kwargs) as f:
-            path = f.read()
-        return YawCache(path)
-
-    @classmethod
-    def _write(cls, data: YawCache, path: str, **kwargs) -> None:
-        with cls._open(path, mode="w") as f:
-            f.write(data.path)
-
-
-def handle_has_path(handle: DataHandle) -> bool:
-    """This is a workaround for a potential bug in RAIL."""
-    return handle.path is not None and handle.path != "None"
-
-
-class YawCacheCreate(
-    YawRailStage,
-    config_items=dict(
-        **config_cache,
-        **config_yaw_columns,
-        **config_yaw_patches,
-    ),
-):
-    """
-    Create a new cache directory to hold a data set and optionally its matching
-    random catalog.
-
-    Both inputs are split into consistent spatial patches that are required by
-    *yet_another_wizz* for correlation function covariance estimates. Each
-    patch is cached separately for efficient access.
-
-    The cache can be constructed from input files or tabular data in memory.
-    Column names for sky coordinates are required, redshifts and per-object
-    weights are optional. One out of three patch create methods must be
-    specified:
-    1. Splitting the data into predefined patches (e.g. form an existing cache
-       instance).
-    2. Splitting the data based on a column with patch indices.
-    3. Generating approximately equal size patches using k-means clustering of
-       objects positions (preferably randoms if provided).
-    """
-
-    inputs = [
-        ("data", TableHandle),
-        ("rand", TableHandle),
-    ]
-    outputs = [
-        ("cache", YawCacheHandle),
-    ]
-
-    def create(self, data: DataFrame, rand: DataFrame | None = None) -> YawCacheHandle:
-        """
-        Create the new cache directory and split the input data into spatial
-        patches.
-
-        Parameters
-        ----------
-        data : DataFrame
-            The data set to split into patches and cache.
-        rand : DataFrame, optional
-            The randoms to split into patches and cache, positions used to
-            automatically generate patch centers if provided and stage is
-            configured with `n_patches`.
-
-        Returns
-        -------
-        YawCacheHandle
-            A handle for the newly created cache directory.
-        """
-        self.set_data("data", data)
-        self.set_optional_data("rand", rand)
-
-        self.run()
-        return self.get_handle("cache")
-
-    @yaw_logged
-    def run(self) -> None:
-        config = self.get_config_dict()
-
-        if config["patches"] is not None:
-            patch_centers = YawCache(config["patches"]).get_patch_centers()
-        else:
-            patch_centers = None
-
-        cache = YawCache.create(config["path"], overwrite=config["overwrite"])
-
-        rand: TableHandle | None = self.get_optional_handle("rand")
-        if rand is not None:
-            cache.rand.set(
-                source=rand.path if handle_has_path(rand) else rand.read(),
-                patch_centers=patch_centers,
-                **self.get_algo_config_dict(),
-            )
-
-        data: TableHandle = self.get_handle("data")
-        cache.data.set(
-            source=data.path if handle_has_path(data) else data.read(),
-            patch_centers=patch_centers,
-            **self.get_algo_config_dict(),
-        )
-
-        self.add_data("cache", cache)
-
-
-def stage_helper(suffix: str) -> dict[str, Any]:
-    """
-    Create an alias mapping for all `YawCacheCreate` stage in- and outputs.
-
-    Useful when creating a new stage with `make_stage`, e.g. by setting
-    `aliases=stage_helper("suffix")`.
-
-    Parameters
-    ----------
-    name : str
-        The suffix to append to the in- and output tags, e.g. `"data_suffix"`.
-
-    Returns
-    -------
-    dict
-        Mapping from original to aliased in- and output tags.
-    """
-    keys_in = (key for key, _ in YawCacheCreate.inputs)
-    keys_out = (key for key, _ in YawCacheCreate.outputs)
-    return {key: f"{key}_{suffix}" for key in chain(keys_in, keys_out)}
-
-
-class YawCacheDrop(YawRailStage):
-    """Utility stage to delete a *yet_another_wizz* cache directory."""
-
-    inputs = [
-        ("cache", YawCacheHandle),
-    ]
-    outputs = []
-
-    def run(self) -> None:
-        cache: YawCache = self.get_data("cache")
-        cache.drop()
-
-    def drop(self, cache: YawCache) -> None:
-        """
-        Delete a data cache.
-
-        Parameters
-        ----------
-        cache : YawCache
-            The cache to delete.
-        """
-        self.set_data("cache", cache)
-        self.run()

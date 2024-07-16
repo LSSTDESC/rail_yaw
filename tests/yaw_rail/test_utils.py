@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from ceci.stage import StageParameter
 from pandas import DataFrame
-from pytest import raises
+from pytest import mark, raises
 from rail.core.data import TableHandle
 from rail.core.stage import RailStage
 
-from rail.yaw_rail import stage
+from rail.yaw_rail import utils
 
 
 class StageTester(
-    stage.YawRailStage,
+    utils.YawRailStage,
     config_items=dict(test=StageParameter(dtype=int)),
 ):
     """__doc__"""
@@ -39,6 +39,17 @@ def make_test_handle() -> TableHandle:
     return TableHandle("test_tag", data=DataFrame(data))
 
 
+@mark.parametrize(
+    "value,expect", [("/some/path", True), ("None", False), (None, False)]
+)
+def test_handle_has_path(value, expect):
+    class DummyHandle:
+        path = value
+
+    dummy = DummyHandle()
+    assert utils.handle_has_path(dummy) == expect
+
+
 class TestYawRailStage:
     def test_init_subclass(self):
         assert StageTester.name == StageTester.__name__
@@ -65,13 +76,21 @@ class TestYawRailStage:
         test_stage.add_handle("input", make_test_handle())
         test_stage.get_handle("input")
 
-    def test_get_optional_data(self):
+    def test_get_optional_data(self, tmp_path):
         test_stage = StageMakerAliased.make_stage()
         assert test_stage.get_optional_data("input") is None
 
-        test_stage.add_data("input", make_test_handle())
-        handle = test_stage.get_optional_data("input")
-        assert isinstance(handle.data, DataFrame)
+        handle = make_test_handle()
+        test_stage.add_data("input", handle.data)
+        data = test_stage.get_optional_data("input")
+        assert isinstance(data, DataFrame)
+
+        path = str(tmp_path / "data.parquet")
+        data.to_parquet(path)
+        test_stage2 = StageMakerAliased.make_stage()
+        test_stage2.add_handle("input", path=path)
+        data2 = test_stage2.get_optional_data("input")
+        assert isinstance(data2.to_pandas(), DataFrame)
 
     def test_set_optional_data(self):
         test_stage = StageMakerAliased.make_stage()
