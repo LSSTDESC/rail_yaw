@@ -44,6 +44,7 @@ from rail.yaw_rail.correlation import (
     config_yaw_backend,
     config_yaw_scales,
     config_yaw_zbins,
+    warn_thread_num_deprecation,
 )
 from rail.yaw_rail.summarize import (
     YawRedshiftDataHandle,
@@ -227,6 +228,10 @@ class YawAutoCorrelate(
         ("output", YawCorrFuncHandle),
     ]
 
+    def __init__(self, args, comm=None):
+        super().__init__(args, comm)
+        warn_thread_num_deprecation(self.get_algo_config_dict())
+
     def correlate(self, sample: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
         """
         Measure the angular autocorrelation amplitude in bins of redshift.
@@ -290,6 +295,10 @@ class YawCrossCorrelate(
     outputs = [
         ("output", YawCorrFuncHandle),
     ]
+
+    def __init__(self, args, comm=None):
+        super().__init__(args, comm)
+        warn_thread_num_deprecation(self.get_algo_config_dict())
 
     def correlate(
         self, reference: YawCacheHandle | YawCache, unknown: YawCacheHandle | YawCache

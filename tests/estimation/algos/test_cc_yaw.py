@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.testing as npt
-from pytest import mark, raises
+from pytest import mark, raises, warns
 
 from rail.estimation.algos.cc_yaw import (
     create_yaw_cache_alias,
@@ -145,7 +145,7 @@ def test_missing_randoms(tmp_path, mock_data, zlim) -> None:
 
     with raises(ValueError, match=".*no randoms.*"):
         YawCrossCorrelate.make_stage(
-            name="cross_corr",
+            name="cross_corr_norand",
             rmin=500,
             rmax=1500,
             zmin=zlim[0],
@@ -210,3 +210,16 @@ def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
             dec_name="dec",
             redshift_name="z",
         ).create(data=mock_data, rand=mock_rand)
+
+
+def test_warn_thread_num_deprecation():
+    with warns(FutureWarning, match=".*thread_num.*"):
+        YawCrossCorrelate.make_stage(
+            name="cross_corr_thread_num",
+            rmin=500,
+            rmax=1500,
+            zmin=0.1,
+            zmax=0.2,
+            zbin_num=2,
+            thread_num=2,
+        )

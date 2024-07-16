@@ -6,6 +6,7 @@ also implements the handle to wrap the pair counts in the stage output.
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 import h5py
@@ -45,6 +46,17 @@ config_yaw_backend = {
     )
 }
 """Stage parameters to configure the computation."""
+
+
+def warn_thread_num_deprecation(config: dict):
+    """`thread_num` is deprecated when MPI backend is implemented."""
+    if config.get("thread_num", None) is not None:
+        warnings.warn(
+            "The 'thread_num' stage parameter is deprecated and will be removed "
+            "once the MPI parallelism is implemented.",
+            FutureWarning,
+            stacklevel=2
+        )
 
 
 class YawCorrFuncHandle(DataHandle):
