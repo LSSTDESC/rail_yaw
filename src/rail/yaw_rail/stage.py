@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Container
-from copy import copy
 from dataclasses import fields
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -129,9 +128,9 @@ class YawRailStage(ABC, RailStage):
         cls, config_items: dict[str, StageParameter] | None = None, **kwargs
     ):
         if config_items is None:
-            config_items = {}
+            config_items = {}  # pragma: no cover
         else:
-            config_items = copy(config_items)
+            config_items = config_items.copy()
 
         cls.name = cls.__name__
         cls.algo_parameters = set(config_items.keys())
