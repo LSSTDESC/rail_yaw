@@ -1,12 +1,8 @@
 """
-This file implements RAIL stages that transform pair counts from the cross-
-and/or autocorrelation function stages into an ensemble redshift estiamte. It is
-the place where refined methods for moddeling clustering redshifts should be
-defined.
-
-NOTE: The current implementation is a very basic method to transform the
-clustering redshift estimate into probability densities by clipping negative
-correlation amplitudes and setting them to zero.
+This file implements utilities for the `YawSummarize` stage, which computes the
+redshift estimate from the cross- and autocorrelation functions, and the
+`YawRedshiftDataHandle` that wraps the stage outputs. Note that these outputs
+are by definition no PDFs.
 """
 
 from __future__ import annotations
@@ -25,18 +21,20 @@ __all__ = [
 ]
 
 
+# mapping from short-form name to full description of correlation functions
 _key_to_cf_name = dict(
     cross="cross-correlation",
     ref="reference sample autocorrelation",
     unk="unknown sample autocorrelation",
 )
-
 config_yaw_est = {
     f"{key}_est": StageParameter(
         dtype=str, required=False, msg=f"Correlation estimator to use for {name}"
     )
     for key, name in _key_to_cf_name.items()
 }
+"""Stage parameters to specify estimators for each correlation function."""
+
 config_yaw_resampling = {
     # resampling method: "method" (currently only "jackknife")
     # bootstrapping (not implemented in yet_another_wizz): "n_boot", "seed"
@@ -44,6 +42,7 @@ config_yaw_resampling = {
     p: create_param("resampling", p)
     for p in ("crosspatch",)
 }
+"""Stage parameters to configure spatial resampling in `yet_another_wizz`."""
 
 
 class YawRedshiftDataHandle(DataHandle):

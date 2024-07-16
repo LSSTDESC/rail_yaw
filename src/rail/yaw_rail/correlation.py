@@ -1,9 +1,7 @@
 """
-This file implements stages for auto- and cross-correlation computions with
-*yet_another_wizz*, which are essentially wrappers for the `yaw.autocorrelate`
-and `yaw.crosscorrelate` functions. Additionally it defines a RAIL data handle
-for *yet_another_wizz* pair count data, which are intermediate data products
-from which the final correlation amplitudes are computed.
+This file implements utilities for the `YawAutoCorrelate` and `YawCrossCorrelate`
+stages, which perform the pair counting for the correlation measurements. It
+also implements the handle to wrap the pair counts in the stage output.
 """
 
 from __future__ import annotations
@@ -28,25 +26,31 @@ __all__ = [
 config_yaw_scales = {
     p: create_param("scales", p) for p in ("rmin", "rmax", "rweight", "rbin_num")
 }
+"""Stage parameters to configure the correlation measurements."""
+
 config_yaw_zbins = {
     p: create_param("binning", p)
     for p in ("zmin", "zmax", "zbin_num", "method", "zbins")
 }
-config_yaw_backend = {p: create_param("backend", p) for p in ("crosspatch",)}
+"""Stage parameters to configure the redshift sampling of the redshift estimate."""
+
 # Since the current implementation does not support MPI, we need to implement
 # the number of threads manually. The code uses multiprocessing and can only
 # run on a single machine.
-config_yaw_backend["thread_num"] = StageParameter(
-    int,
-    required=False,
-    msg="the number of threads to use by the multiprocessing backend (single machine, MPI not yet supported)",
-)
+config_yaw_backend = {
+    "thread_num": StageParameter(
+        int,
+        required=False,
+        msg="the number of threads to use by the multiprocessing backend",
+    )
+}
+"""Stage parameters to configure the computation."""
 
 
 class YawCorrFuncHandle(DataHandle):
     """
     Class to act as a handle for a `yaw.CorrFunc` instance, associating it
-    with a file and providing tools to read & write it to that file.
+    with a file and providing tools to read and write the data.
 
     Parameters
     ----------

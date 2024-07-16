@@ -151,9 +151,7 @@ def test_missing_randoms(tmp_path, mock_data, zlim) -> None:
             zmin=zlim[0],
             zmax=zlim[1],
             zbin_num=2,
-        ).correlate(
-            reference=cache_ref, unknown=cache_unk
-        )
+        ).correlate(reference=cache_ref, unknown=cache_unk)
 
 
 @mark.slow

@@ -1,3 +1,8 @@
+"""
+This module implements some code that ensures compatibility with different
+versions of code dependencies.
+"""
+
 from __future__ import annotations
 
 import sys
@@ -6,8 +11,15 @@ import yaml
 from ceci import __version__ as ceci_ver_str
 from rail.core.stage import RailPipeline
 
+__all__ = [
+    "FixedRailPipeline",
+]
+
 
 ceci_ver_main, ceci_ver_sub = [int(v) for v in ceci_ver_str.split(".")[:2]]
+
+# The subclass below addresses an issue fixed in ceci version 2 but is not
+# available until all of rail has switched to using ceci v2.
 
 if ceci_ver_main >= 2:
     FixedRailPipeline = RailPipeline

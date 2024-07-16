@@ -1,9 +1,8 @@
 """
-This file implements utility functions that automatically create
-`ceci.config.StageParameter` instances from their corresponding parameter in
-*yet_another_wizz* by hooking into its integrated help system. Additionally,
-it provides a custom base class for `RailStages` that automates some of the
-stage properties and configuration definition.
+This file implements utility functions that help generating stage parameters
+from the *yet_another_wizz* configuration classes. Furthermore, it implements an
+extension to the default `RailStage` that simplfies safe access to optional
+stage inputs (handles/data) that is commonly used in the wrapper stages.
 """
 
 from __future__ import annotations
@@ -25,16 +24,12 @@ if TYPE_CHECKING:  # pragma: no cover
 __all__ = [
     "YawRailStage",
     "create_param",
+    "handle_has_path",
 ]
 
 
-def handle_has_path(handle: DataHandle) -> bool:
-    """This is a workaround for a peculiarity of `ceci`."""
-    return handle.path is not None and handle.path.lower() != "none"
-
-
 def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
-    """Convert parameter metadata, embedded into the *yet_another_wizz*
+    """Convert the parameter metadata, embedded in the *yet_another_wizz*
     configuration dataclasses, to a python dictionary."""
     for field in fields(config_cls):
         if field.name == parname:
@@ -47,8 +42,8 @@ def create_param(
     parname: str,
 ) -> StageParameter:
     """
-    Hook into the help system and defaults to construct a `StageParameter` from
-    a *yet_another_wizz* configuration parameter.
+    Hook into *yet_another_wizz* configuration and defaults to construct a
+    `StageParameter` from a *yet_another_wizz* configuration class.
 
     Parameters
     ----------
@@ -84,6 +79,11 @@ def create_param(
     )
 
 
+def handle_has_path(handle: DataHandle) -> bool:
+    """This is a workaround for a peculiarity of `ceci`."""
+    return handle.path is not None and handle.path.lower() != "none"
+
+
 class YawRailStage(ABC, RailStage):
     """
     Base class for any `RailStage` used in this wrapper package.
@@ -91,19 +91,17 @@ class YawRailStage(ABC, RailStage):
     It introduces a few quality-of-life improvements compared to the base
     `RailStage` when creating a sub-class. These include:
 
+    - adding a methods to safely access optional stage inputs (handles/data),
     - setting the `name` attribute automatically to the class name,
     - copying the default `RailStage.config_options`,
     - providing an interface to directly register a dictionary of algorithm-
-      specific configuration parameters, and
+      specific stage parameters, and
     - automatically adding the `"verbose"` parameter to the stage, which
       controlls the log-level filtering for the *yet_another_wizz* logger.
 
     The names of all algorithm-specific parameters are tracked in the special
     attribute `algo_parameters`. There is a special method to get a dictionary
     of just those parameters.
-
-    Additionally, there are methods to set and retrieve (optional) stage inputs
-    that do not raise exceptions if the handle has not been assigned.
 
     Examples
     --------
@@ -120,18 +118,20 @@ class YawRailStage(ABC, RailStage):
     """
 
     algo_parameters: set[str]
-    """Lists the names of all algorithm-specific parameters."""
+    """Lists the names of all algorithm-specific parameters that were added when
+    subclassing."""
 
     def __init_subclass__(
         cls, config_items: dict[str, StageParameter] | None = None, **kwargs
     ):
+        cls.name = cls.__name__
+
         if config_items is None:
             config_items = {}  # pragma: no cover
         else:
             config_items = config_items.copy()
-
-        cls.name = cls.__name__
         cls.algo_parameters = set(config_items.keys())
+
         cls.config_options = super().config_options.copy()
         cls.config_options.update(config_items)
         cls.config_options["verbose"] = config_yaw_verbose  # used for yaw logger
@@ -145,7 +145,8 @@ class YawRailStage(ABC, RailStage):
         Return the algorithm-specific configuration.
 
         Same as `get_config_dict`, but only returns those parameters that are
-        listed in `algo_parameters`.
+        listed in `algo_parameters`, i.e. been added as stage parameters when
+        creating the subclass.
 
         Parameters
         ----------
@@ -167,7 +168,7 @@ class YawRailStage(ABC, RailStage):
 
     def get_optional_handle(self, tag: str, **kwargs) -> DataHandle | None:
         """
-        Access a handle without raising a `KeyError` if it is not set.
+        Access an optional handle an return `None` if it is not set.
 
         Parameters
         ----------
@@ -190,7 +191,7 @@ class YawRailStage(ABC, RailStage):
 
     def get_optional_data(self, tag: str, **kwargs) -> Any | None:
         """
-        Access a handle's data without raising a `KeyError` if it is not set.
+        Access the data of an optional handle and return `None` if it is not set.
 
         Parameters
         ----------
@@ -215,7 +216,7 @@ class YawRailStage(ABC, RailStage):
 
     def set_optional_data(self, tag: str, value: Any | None, **kwarg) -> None:
         """
-        Set a handle's data if the value is not None.
+        Set a handle's data if the provided value is not None.
 
         Parameters
         ----------

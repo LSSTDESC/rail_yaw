@@ -1,12 +1,9 @@
 """
 This file implements a wrapper for a cache directory for *yet_another_wizz*
-catalogs. The cache is designed to hold a pair of data and (optional) random
-catalog. The patch center coordinates are enforced to be consistent.
-
-The cache is wrapped by two RAIL stages, one to create a new cache from input
-data tables, and one to delete the cache directory and its contents. They are
-managed through a special data handle that allows passing the directory path
-between RAIL stages to define inputs for the correlation function stages.
+catalogs. The cache is designed to hold a pair of a data and an (optional)
+random catalog. The patch center coordinates are enforced to be consistent
+within a cache. These caches are created by `YawCacheCreate`, but must currently
+be removed manually by the user when they are no longer needed.
 """
 
 from __future__ import annotations
@@ -58,6 +55,7 @@ config_yaw_columns = dict(
         msg="column name of weight",
     ),
 )
+"""Stage parameters to specify column names in the input data."""
 
 config_yaw_patches = dict(
     patch_file=StageParameter(
@@ -77,6 +75,7 @@ config_yaw_patches = dict(
         msg="number of spatial patches to create using knn on coordinates of randoms",
     ),
 )
+"""Optional stage parameters to specify the patch creation stragegy."""
 
 config_cache = dict(
     path=StageParameter(
@@ -88,6 +87,7 @@ config_cache = dict(
         msg="overwrite the path if it is an existing cache directory",
     ),
 )
+"""Stage parameters to specify the cache directory."""
 
 
 def normalise_path(path: str) -> str:

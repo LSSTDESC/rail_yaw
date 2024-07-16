@@ -3,7 +3,6 @@ auto_corr:
     output: output_auto_corr
     sample: output_cache_ref
   config: null
-  crosspatch: true
   method: linear
   name: auto_corr
   output_mode: default
@@ -68,7 +67,6 @@ cross_corr:
     reference: output_cache_ref
     unknown: output_cache_unk
   config: null
-  crosspatch: true
   method: linear
   name: cross_corr
   output_mode: default

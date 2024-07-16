@@ -22,6 +22,8 @@ def get_dc2_test_data() -> DataFrame:
     """
     Download a small dataset with positions and redshifts, derived from DC2.
 
+    Taken from 25 sqdeg, limited to 100k objects with redshifts `0.2 <= z < 1.8`.
+
     Returns
     -------
     DataFrame

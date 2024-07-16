@@ -1,7 +1,7 @@
 """
 This file implements a context wrapper that allows displaying *yet_another_wizz*
-logging messages on stdout, which is used in RAIL stages that call
-*yet_another_wizz* code.
+logging messages on stdout. This way, the will be collected and logged by `ceci`
+when running a pipeline.
 """
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ config_yaw_verbose = StageParameter(
     default="info",
     msg="lowest log level emitted by *yet_another_wizz*",
 )
+"""Stage parameter for the logging level."""
 
 
 class OnlyYawFilter(logging.Filter):
@@ -62,8 +63,7 @@ def yaw_logged(method):
 
     @wraps(method)
     def impl(self: YawRailStage, *args, **kwargs):
-        config = self.get_config_dict()
-        logger = init_logger(level=config["verbose"])
+        logger = init_logger(level=self.get_config_dict()["verbose"])
         try:
             return method(self, *args, **kwargs)
         finally:

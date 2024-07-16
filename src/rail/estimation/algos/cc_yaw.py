@@ -1,3 +1,21 @@
+"""
+This file implements all stages required to wrap *yet_another_wizz* in RAIL.
+These are:
+
+- YawCacheCreate:
+  Preprocessing input data and arranging them in spatial patches for efficient
+  acces.
+- YawAutoCorrelate:
+  Computing the autocorrelation by running the pair couting in spatial patches.
+  Used for galaxy bias mitigation.
+- YawCrossCorrelate:
+  Computing the cross-correlation by running the pair couting in spatial
+  patches. Represents a biased redshift estimte.
+- YawSummarize:
+  Transforming the correlation functin pair counts to a redshift estimate (not a
+  PDF!).
+"""
+
 from __future__ import annotations
 
 import warnings
@@ -76,8 +94,8 @@ class YawCacheCreate(
     random catalog.
 
     Both input data sets are split into consistent spatial patches that are
-    required by *yet_another_wizz* for correlation function covariance estimates.
-    Each patch is cached separately for efficient access.
+    required by *yet_another_wizz* for correlation function covariance
+    estimates. Each patch is stored separately for efficient access.
 
     The cache can be constructed from input files or tabular data in memory.
     Column names for sky coordinates are required, redshifts and per-object
@@ -88,6 +106,10 @@ class YawCacheCreate(
     2. Splitting the data based on a column with patch indices.
     3. Generating approximately equal size patches using k-means clustering of
        objects positions (preferably randoms if provided).
+
+    **Note:** The cache directory must be deleted manually when it is no longer
+    needed. (The reference sample cache may be reused when operating on
+    tomographic bins.)
     """
 
     inputs = [
@@ -336,17 +358,16 @@ class YawSummarize(
     ),
 ):
     """
-    A simple summarizer that computes a clustering redshift estimate from the
-    measured correlation amplitudes.
+    A summarizer that computes a clustering redshift estimate from the measured
+    correlation amplitudes.
 
     Evaluates the cross-correlation pair counts with the provided estimator.
     Additionally corrects for galaxy sample bias if autocorrelation measurements
-    are given.
+    are provided as stage inputs.
 
-    .. warning::
-    This summarizer simply replaces all non-finite and negative values in the
-    clustering redshift estimate to produce PDFs. This may have significant
-    impacts on the recovered mean redshift.
+    **Note:** This summarizer does not produce a PDF, but a ratio of
+    correlation functions, which may result in negative values. Further
+    modelling of the output is required.
     """
 
     inputs = [
@@ -388,12 +409,9 @@ class YawSummarize(
 
         Returns
         -------
-        dict
-            Dictionary with keys `"output"` and `"yaw_cc"`:
-            1. `QPHandle` containing PDFs of the estimated spatial samples.
-            2. `YawRedshiftDataHandle` wrapping the direct output of
-               *yet_another_wizz*; the clustering redshift estimate, spatial
-               samples thereof, and its covariance matrix.
+        YawRedshiftDataHandle
+            The clustering redshift estimate, spatial (jackknife) samples
+            thereof, and its covariance matrix.
         """
         self.set_data("cross_corr", cross_corr)
         self.set_optional_data("auto_corr_ref", auto_corr_ref)
