@@ -124,6 +124,39 @@ def test_run(tmp_path, mock_data, mock_rand, zlim) -> None:
 
 
 @mark.slow
+def test_missing_randoms(tmp_path, mock_data, zlim) -> None:
+    cache_ref = YawCacheCreate.make_stage(
+        name="ref_norand",
+        aliases=create_yaw_cache_alias("ref_norand"),
+        path=f"{tmp_path}/test_ref",
+        ra_name="ra",
+        dec_name="dec",
+        redshift_name="z",
+        n_patches=3,
+    ).create(data=mock_data)
+
+    cache_unk = YawCacheCreate.make_stage(
+        name="unk_norand",
+        aliases=create_yaw_cache_alias("unk_norand"),
+        path=f"{tmp_path}/test_unk",
+        ra_name="ra",
+        dec_name="dec",
+    ).create(data=mock_data, patch_source=cache_ref)
+
+    with raises(ValueError, match=".*no randoms.*"):
+        YawCrossCorrelate.make_stage(
+            name="cross_corr",
+            rmin=500,
+            rmax=1500,
+            zmin=zlim[0],
+            zmax=zlim[1],
+            zbin_num=2,
+        ).correlate(
+            reference=cache_ref, unknown=cache_unk
+        )
+
+
+@mark.slow
 def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
     cache_ref = YawCacheCreate.make_stage(
         name="ref_n_patch",

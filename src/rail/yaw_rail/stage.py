@@ -39,9 +39,7 @@ def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
     for field in fields(config_cls):
         if field.name == parname:
             return {k[4:]: v for k, v in field.metadata.items()}
-    raise AttributeError(
-        f"{config_cls} has no attribute '{parname}'"
-    )  # pragma: no cover
+    raise AttributeError(f"{config_cls} has no attribute '{parname}'")
 
 
 def create_param(

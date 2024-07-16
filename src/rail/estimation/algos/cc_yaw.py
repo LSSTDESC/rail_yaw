@@ -313,7 +313,7 @@ class YawCrossCorrelate(
         data_ref, rand_ref = self._get_catalogs("reference")
         data_unk, rand_unk = self._get_catalogs("unknown")
         if rand_ref is None and rand_unk is None:
-            raise ValueError("no randoms provided")  # pragma: no cover
+            raise ValueError("no randoms provided")
 
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=FutureWarning)

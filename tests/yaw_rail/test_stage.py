@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from yaw.config import ScalesConfig
+
 from ceci.stage import StageParameter
 from pandas import DataFrame
 from pytest import mark, raises
@@ -48,6 +50,11 @@ def test_handle_has_path(value, expect):
 
     dummy = DummyHandle()
     assert stage.handle_has_path(dummy) == expect
+
+
+def test_get_yaw_config_meta():
+    with raises(AttributeError, match=".*no attribute.*"):
+        stage.get_yaw_config_meta(ScalesConfig, "does_not_exist")
 
 
 class TestYawRailStage:
