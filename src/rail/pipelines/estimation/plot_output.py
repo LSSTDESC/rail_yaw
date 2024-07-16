@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+#
+# This scripts plots the redshift estimate produced by the example pipeline.
+# Automatically run by run_pipeline.sh
+#
+
+# pylint: skip-file
 import pickle
 import os
 

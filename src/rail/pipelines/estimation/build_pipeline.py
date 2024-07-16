@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 #
-# This script produces a pipeline file akin to the yet_another_wizz example notebook
+# This script produces a pipeline file akin to the yet_another_wizz example
+# notebook as well as the input test data required to run the pipeline.
 #
 
 # pylint: skip-file
