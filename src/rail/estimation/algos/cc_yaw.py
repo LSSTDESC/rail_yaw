@@ -39,6 +39,13 @@ from rail.yaw_rail.cache import YawCache, patch_centers_from_file
 from rail.yaw_rail.handles import YawCacheHandle, YawCorrFuncHandle
 from rail.yaw_rail.utils import YawRailStage, yaw_logged
 
+__all__ = [
+    "YawCacheCreate",
+    "YawAutoCorrelate",
+    "YawCrossCorrelate",
+    "YawSummarize",
+]
+
 
 def warn_thread_num_deprecation(config: dict):
     """`thread_num` is deprecated when MPI backend is implemented."""
