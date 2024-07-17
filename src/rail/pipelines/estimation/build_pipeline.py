@@ -151,4 +151,4 @@ if __name__ == "__main__":
         run_config=dict(output_dir=data_dir, log_dir=log_dir, resume=False),
         stages_config=None,
     )
-    pipe.save("yaw_pipeline.yml", site_name="local")
+    pipe.save(os.path.join(root, "yaw_pipeline.yml"), site_name="local")
