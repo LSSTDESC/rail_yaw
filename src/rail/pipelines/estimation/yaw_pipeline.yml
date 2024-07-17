@@ -1,0 +1,36 @@
+config: yaw_pipeline_config.yml
+inputs:
+  auto_corr_unk: none
+  data_ref: data/input_data.parquet
+  data_unk: data/input_data.parquet
+  patch_source_ref: none
+  rand_ref: data/input_rand.parquet
+  rand_unk: none
+log_dir: logs
+modules: rail
+output_dir: data
+resume: false
+site:
+  max_threads: 2
+  name: local
+stages:
+- classname: YawCacheCreate
+  module_name: rail.estimation.algos.cc_yaw
+  name: cache_ref
+  nprocess: 1
+- classname: YawCacheCreate
+  module_name: rail.estimation.algos.cc_yaw
+  name: cache_unk
+  nprocess: 1
+- classname: YawAutoCorrelate
+  module_name: rail.estimation.algos.cc_yaw
+  name: auto_corr
+  nprocess: 1
+- classname: YawCrossCorrelate
+  module_name: rail.estimation.algos.cc_yaw
+  name: cross_corr
+  nprocess: 1
+- classname: YawSummarize
+  module_name: rail.estimation.algos.cc_yaw
+  name: summarize
+  nprocess: 1

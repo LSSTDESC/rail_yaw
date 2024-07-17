@@ -1,0 +1,100 @@
+auto_corr:
+  aliases:
+    output: output_auto_corr
+    sample: output_cache_ref
+  config: null
+  method: linear
+  name: auto_corr
+  output_mode: default
+  rbin_num: 50
+  rmax: 1000.0
+  rmin: 100.0
+  rweight: null
+  sample: None
+  thread_num: null
+  verbose: debug
+  zbin_num: 8
+  zbins: null
+  zmax: 3.0
+  zmin: 0.0
+cache_ref:
+  aliases:
+    data: data_ref
+    output: output_cache_ref
+    patch_source: patch_source_ref
+    rand: rand_ref
+  config: null
+  data: None
+  dec_name: dec
+  n_patches: 5
+  name: cache_ref
+  output_mode: default
+  overwrite: true
+  patch_file: null
+  patch_name: null
+  patch_source: None
+  path: data/test_ref
+  ra_name: ra
+  rand: None
+  redshift_name: z
+  verbose: debug
+  weight_name: null
+cache_unk:
+  aliases:
+    data: data_unk
+    output: output_cache_unk
+    patch_source: output_cache_ref
+    rand: rand_unk
+  config: null
+  data: None
+  dec_name: dec
+  n_patches: null
+  name: cache_unk
+  output_mode: default
+  overwrite: true
+  patch_file: null
+  patch_name: null
+  patch_source: None
+  path: data/test_unk
+  ra_name: ra
+  rand: None
+  redshift_name: null
+  verbose: debug
+  weight_name: null
+cross_corr:
+  aliases:
+    output: output_cross_corr
+    reference: output_cache_ref
+    unknown: output_cache_unk
+  config: null
+  method: linear
+  name: cross_corr
+  output_mode: default
+  rbin_num: 50
+  reference: None
+  rmax: 1000.0
+  rmin: 100.0
+  rweight: null
+  thread_num: null
+  unknown: None
+  verbose: debug
+  zbin_num: 8
+  zbins: null
+  zmax: 3.0
+  zmin: 0.0
+summarize:
+  aliases:
+    auto_corr_ref: output_auto_corr
+    cross_corr: output_cross_corr
+    output: output_summarize
+  auto_corr_ref: None
+  auto_corr_unk: None
+  config: null
+  cross_corr: None
+  cross_est: null
+  crosspatch: true
+  name: summarize
+  output_mode: default
+  ref_est: null
+  unk_est: null
+  verbose: debug
