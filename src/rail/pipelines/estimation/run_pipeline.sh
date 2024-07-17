@@ -8,5 +8,6 @@ set -e
 
 time ceci yaw_pipeline.yml
 echo
+export MPLBACKEND=qtagg
 python3 plot_output.py
 echo "inspect outputs in $(pwd)/data"
