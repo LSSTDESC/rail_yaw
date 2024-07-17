@@ -20,7 +20,7 @@ dynamic = ["version"]
 dependencies = [
     "numpy",
     "h5py",
-    "pz_rail_base @ git+https://github.com/LSSTDESC/rail_base@ceci2",
+    "pz_rail_base>=1.0.3",
     "qp-prob",
     # fix yet_another_wizz version; if there is a new release, issue a new
     # patch or minor version release, depending on the changes requred
