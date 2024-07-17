@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import inspect
 import pickle
-import subprocess
 from pathlib import Path
+from subprocess import check_call
 
 import numpy as np
 import numpy.testing as npt
@@ -149,12 +149,9 @@ def test_ceci_pipeline(tmp_path) -> None:
     DEBUG_LOG_PATH = "/dev/null"  # change to some non-temporary location
     build_script = inspect.getfile(pipeline_build_scipt)
     with open(DEBUG_LOG_PATH, "w") as f:
-        subprocess.check_call(
-            ["python3", str(build_script), "--root", str(tmp_path)], stdout=f, stderr=f
-        )
-        subprocess.check_call(
-            ["ceci", str(tmp_path / "yaw_pipeline.yml")], stdout=f, stderr=f
-        )
+        redirect = dict(stdout=f, stderr=f)
+        check_call(["python3", str(build_script), "--root", str(tmp_path)], **redirect)
+        check_call(["ceci", str(tmp_path / "yaw_pipeline.yml")], **redirect)
 
     # convert output to YAW standard YAW text files
     with open(tmp_path / "data" / "output_summarize.pkl", "rb") as f:
