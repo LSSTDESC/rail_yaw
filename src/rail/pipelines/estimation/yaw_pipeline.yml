@@ -1,36 +1,57 @@
-config: yaw_pipeline_config.yml
-inputs:
-  auto_corr_unk: none
-  data_ref: data/input_data.parquet
-  data_unk: data/input_data.parquet
-  patch_source_ref: none
-  rand_ref: data/input_rand.parquet
-  rand_unk: none
-log_dir: logs
-modules: rail
 output_dir: data
+log_dir: logs
 resume: false
+config: yaw_pipeline_config.yml
+modules: rail
+inputs:
+  data_ref: data/input_data.parquet
+  rand_ref: data/input_rand.parquet
+  data_unk: data/input_data.parquet
+  rand_unk: none
+  patch_source_ref: none
+  auto_corr_unk: none
+stages:
+- name: cache_ref
+  classname: YawCacheCreate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    data: data_ref
+    rand: rand_ref
+    patch_source: patch_source_ref
+    output: output_cache_ref
+- name: cache_unk
+  classname: YawCacheCreate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    data: data_unk
+    rand: rand_unk
+    patch_source: output_cache_ref
+    output: output_cache_unk
+- name: auto_corr
+  classname: YawAutoCorrelate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_auto_corr
+    sample: output_cache_ref
+- name: cross_corr
+  classname: YawCrossCorrelate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_cross_corr
+    reference: output_cache_ref
+    unknown: output_cache_unk
+- name: summarize
+  classname: YawSummarize
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_summarize
+    cross_corr: output_cross_corr
+    auto_corr_ref: output_auto_corr
 site:
   max_threads: 2
   name: local
-stages:
-- classname: YawCacheCreate
-  module_name: rail.estimation.algos.cc_yaw
-  name: cache_ref
-  nprocess: 1
-- classname: YawCacheCreate
-  module_name: rail.estimation.algos.cc_yaw
-  name: cache_unk
-  nprocess: 1
-- classname: YawAutoCorrelate
-  module_name: rail.estimation.algos.cc_yaw
-  name: auto_corr
-  nprocess: 1
-- classname: YawCrossCorrelate
-  module_name: rail.estimation.algos.cc_yaw
-  name: cross_corr
-  nprocess: 1
-- classname: YawSummarize
-  module_name: rail.estimation.algos.cc_yaw
-  name: summarize
-  nprocess: 1

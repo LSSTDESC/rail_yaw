@@ -226,8 +226,8 @@ class YawAutoCorrelate(
         ("output", YawCorrFuncHandle),
     ]
 
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm)
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
         warn_thread_num_deprecation(self.get_algo_config_dict())
 
     def correlate(self, sample: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
@@ -294,8 +294,8 @@ class YawCrossCorrelate(
         ("output", YawCorrFuncHandle),
     ]
 
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm)
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
         warn_thread_num_deprecation(self.get_algo_config_dict())
 
     def correlate(
@@ -387,8 +387,8 @@ class YawSummarize(
         ("output", ModelHandle),
     ]
 
-    def __init__(self, args, comm=None):
-        super().__init__(args, comm=comm)
+    def __init__(self, args, **kwargs):
+        super().__init__(args, **kwargs)
         config = {p: self.config_options[p].value for p in stage_config.yaw_resampling}
         self.yaw_config = ResamplingConfig.create(**config)
 
