@@ -44,6 +44,7 @@ __all__ = [
     "YawAutoCorrelate",
     "YawCrossCorrelate",
     "YawSummarize",
+    "create_yaw_cache_alias",
 ]
 
 
