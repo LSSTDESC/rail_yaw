@@ -1,6 +1,6 @@
 cache_ref:
   output_mode: default
-  path: data/test_ref
+  path: ./data/test_ref
   overwrite: true
   ra_name: ra
   dec_name: dec
@@ -14,7 +14,7 @@ cache_ref:
   config: null
 cache_unk:
   output_mode: default
-  path: data/test_unk
+  path: ./data/test_unk
   overwrite: true
   ra_name: ra
   dec_name: dec
@@ -32,8 +32,8 @@ auto_corr:
   rmax: 1000.0
   rweight: null
   rbin_num: 50
-  zmin: 0.0
-  zmax: 3.0
+  zmin: 0.2
+  zmax: 1.8
   zbin_num: 8
   method: linear
   zbins: null
@@ -47,8 +47,8 @@ cross_corr:
   rmax: 1000.0
   rweight: null
   rbin_num: 50
-  zmin: 0.0
-  zmax: 3.0
+  zmin: 0.2
+  zmax: 1.8
   zbin_num: 8
   method: linear
   zbins: null

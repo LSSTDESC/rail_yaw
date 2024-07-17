@@ -5,6 +5,7 @@
 #
 
 # pylint: skip-file
+import argparse
 import os
 from shutil import rmtree
 
@@ -24,16 +25,19 @@ except NameError:
     from rail.estimation.algos.cc_yaw import *
 
 
-DATA = "data"
-LOGS = "logs"
 VERBOSE = "debug"  # verbosity level of built-in logger, disable with "error"
+
+parser = argparse.ArgumentParser(
+    description="Generate test data and build the rail_yaw ceci example pipeline."
+)
+parser.add_argument("--root", default=".")
 
 # configuration for the correlation measurements
 corr_config = dict(
     rmin=100,
     rmax=1000,
-    zmin=0.0,
-    zmax=3.0,
+    zmin=0.2,
+    zmax=1.8,
     zbin_num=8,
     verbose=VERBOSE,
 )
@@ -66,7 +70,7 @@ def create_datasets(root):
 
 class YawPipeline(FixedRailPipeline):
 
-    def __init__(self):
+    def __init__(self, data_dir, log_dir):
         FixedRailPipeline.__init__(self)
 
         DS = RailStage.data_store
@@ -74,7 +78,7 @@ class YawPipeline(FixedRailPipeline):
 
         self.cache_ref = YawCacheCreate.build(
             aliases=create_yaw_cache_alias("ref"),
-            path=os.path.join(DATA, "test_ref"),
+            path=os.path.join(data_dir, "test_ref"),
             overwrite=True,
             ra_name="ra",
             dec_name="dec",
@@ -88,7 +92,7 @@ class YawPipeline(FixedRailPipeline):
                 patch_source=self.cache_ref.io.output,
             ),
             aliases=create_yaw_cache_alias("unk"),
-            path=os.path.join(DATA, "test_unk"),
+            path=os.path.join(data_dir, "test_unk"),
             overwrite=True,
             ra_name="ra",
             dec_name="dec",
@@ -120,13 +124,21 @@ class YawPipeline(FixedRailPipeline):
 
 
 if __name__ == "__main__":
-    for folder in (DATA, LOGS):
+    root = parser.parse_args().root
+    print(f"setting working directory: {root}")
+    if not os.path.exists(root):
+        os.mkdir(root)
+
+    data_dir = os.path.join(root, "data")
+    log_dir = os.path.join(root, "logs")
+    for folder in (data_dir, log_dir):
         if os.path.exists(folder):
             rmtree(folder)
         os.mkdir(folder)
-    data_path, rand_path = create_datasets(DATA)
 
-    pipe = YawPipeline()
+    data_path, rand_path = create_datasets(data_dir)
+
+    pipe = YawPipeline(data_dir, log_dir)
     pipe.initialize(
         overall_inputs=dict(
             data_ref=data_path,
@@ -136,7 +148,7 @@ if __name__ == "__main__":
             patch_source_ref="none",
             auto_corr_unk="none",
         ),
-        run_config=dict(output_dir=DATA, log_dir=LOGS, resume=False),
+        run_config=dict(output_dir=data_dir, log_dir=log_dir, resume=False),
         stages_config=None,
     )
-    pipe.save("yaw_pipeline.yml", site_name="local")
+    pipe.save(os.path.join(root, "yaw_pipeline.yml"), site_name="local")

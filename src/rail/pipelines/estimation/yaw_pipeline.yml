@@ -1,12 +1,12 @@
-output_dir: data
-log_dir: logs
+output_dir: ./data
+log_dir: ./logs
 resume: false
 config: yaw_pipeline_config.yml
 modules: rail
 inputs:
-  data_ref: data/input_data.parquet
-  rand_ref: data/input_rand.parquet
-  data_unk: data/input_data.parquet
+  data_ref: ./data/input_data.parquet
+  rand_ref: ./data/input_rand.parquet
+  data_unk: ./data/input_data.parquet
   rand_unk: none
   patch_source_ref: none
   auto_corr_unk: none
