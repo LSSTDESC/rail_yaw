@@ -59,14 +59,10 @@ testpaths = [
 addopts = [
     "--cov=rail",
     "--cov-report=html",
-    "--slow",
-]
-
-[tool.coverage.run]
-omit = [
     # omit the pipeline generation script, since it is run by a test but in a
     # separate interpreter, so coverage is not correctly recorded
-    "src/rail/pipelines/estimation/build_pipeline.py",
+    "--cov-omit=src/rail/pipelines/estimation/build_pipeline.py",
+    "--slow",
 ]
 
 [tool.pylint]
