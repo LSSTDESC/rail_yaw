@@ -62,6 +62,13 @@ addopts = [
     "--slow",
 ]
 
+[tool.coverage.run]
+omit = [
+    # omit the pipeline generation script, since it is run by a test but in a
+    # separate interpreter, so coverage is not correctly recorded
+    "src/rail/pipelines/estimation/build_pipeline.py",
+]
+
 [tool.pylint]
 disable = [
     "abstract-method",
