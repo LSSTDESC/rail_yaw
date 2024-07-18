@@ -7,48 +7,38 @@
 
 # pz-rail-yaw
 
-This is a wrapper for [RAIL](https://github.com/LSSTDESC/RAIL) (see below) to
-integrate the clustering redshift code *yet_another_wizz*:
+This is a wrapper to integrate the clustering redshift code *yet_another_wizz*
+(YAW) into [RAIL](https://github.com/LSSTDESC/RAIL):
 
 - code: https://github.com/jlvdb/yet_another_wizz.git
 - docs: https://yet-another-wizz.readthedocs.io/
 - PyPI: https://pypi.org/project/yet_another_wizz/
 - Docker: https://hub.docker.com/r/jlvdb/yet_another_wizz/
 
+**Original publication:** https://arxiv.org/abs/2007.01846
 
 ## About this wrapper
 
-The current wrapper implements most of the functionality of *yet_another_wizz*,
-which is an external dependency for this package. The wrapper currently
-implements five different stages and three custom data handles:
+The wrapper closely resembles the structure and functionality of YAW by
+implementing four different RAIL stages:
 
-- A cache directory, which stores a data set and its corresponding random
-  points. Both catalogs are split into spatial patches which are used for the
-  covariance estimation. The cache directory is created and destroyed with two
-  dedicated stages.
-- A handle for *yet_another_wizz* pair count data (stored as HDF5 file), which
-  are created as outputs of the cross- and autocorrelation stages.
-- A handle for *yet_another_wizz* clustering redshift estimates (stored as
-  python pickle file), which is created by the final estimator summary stage.
+- *YawCacheCreate*, which implements the spatial patches of YAW data catalogues,
+- *YawAutoCorrelate*/*YawCrossCorrelate*, which implement the expensive pair
+  counting of the correlation measurements, and
+- *YawSummarize*, which transforms the pair counts to a redshift estimate with
+  an optional mitigation for galaxy sample bias.
 
-A jupyter notebook containing a full example with more detailed descriptions is
-included in
+The repository includes an extensive example notebook
 
     examples/full_example.ipynb
 
-and an example RAIL pipeline can be generated an executed with code found in
+with further documentation and an example `ceci` pipeline
 
-    src/rail/pipelines/estimation/algos
+    src/rail/pipelines/estimation/yaw_pipeline.yml
 
-### Note
+for procesing large and/or more complex data sets.
 
-The summary stage produces a `qp.Ensemble`, but does so by simply setting all
-negative correlation amplitudes in all generated (spatial) samples to zero.
-This needs refinement in a future release. For now it is advised to use the
-second output of the summary stage, which is the raw clutering redshift estimate
-from *yet_another_wizz* (`yaw.RedshiftData`).
-
-![rail_yaw_network](https://raw.githubusercontent.com/LSSTDESC/rail_yaw/main/examples/rail_yaw_network.svg)
+![rail_yaw_network](https://raw.githubusercontent.com/LSSTDESC/rail_yaw/main/examples/rail_yaw_network.png)
 
 ## RAIL: Redshift Assessment Infrastructure Layers
 
