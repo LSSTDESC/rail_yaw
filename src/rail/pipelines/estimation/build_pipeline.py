@@ -11,12 +11,11 @@ from shutil import rmtree
 
 from yaw import UniformRandoms
 
-from rail.core.stage import RailStage
+from rail.core.stage import RailPipeline, RailStage
 import rail.stages
 
 rail.stages.import_and_attach_all()
 from rail.stages import *
-from rail.yaw_rail.backports import FixedRailPipeline
 from rail.yaw_rail.utils import get_dc2_test_data
 
 try:  # TODO: remove when integrated in RAIL
@@ -68,10 +67,10 @@ def create_datasets(root):
     return (data_path, rand_path)
 
 
-class YawPipeline(FixedRailPipeline):
+class YawPipeline(RailPipeline):
 
-    def __init__(self, data_dir, log_dir):
-        FixedRailPipeline.__init__(self)
+    def __init__(self, data_dir):
+        super().__init__()
 
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
@@ -138,7 +137,7 @@ if __name__ == "__main__":
 
     data_path, rand_path = create_datasets(data_dir)
 
-    pipe = YawPipeline(data_dir, log_dir)
+    pipe = YawPipeline(data_dir)
     pipe.initialize(
         overall_inputs=dict(
             data_ref=data_path,
