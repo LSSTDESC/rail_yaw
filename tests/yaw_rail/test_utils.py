@@ -9,6 +9,10 @@ from rail.core.stage import RailStage
 from rail.yaw_rail import utils
 
 
+TEST_PARAM_DEFAULT = 0
+
+
+# a dummy stage for testing with a single parameter
 class StageTester(
     utils.YawRailStage,
     config_items=dict(test=StageParameter(dtype=int)),
@@ -23,14 +27,16 @@ class StageTester(
 
 
 class StageMakerAliased:
-    # cannot use a single stage instance here since handles are visible globally
-    count = 0
+    # need to create aliases every time using a stage in different test
+    count = 0  # incremented index for aliasing
 
     @classmethod
     def make_stage(cls) -> StageTester:
         cls.count += 1
         return StageTester.make_stage(
-            test=0, name=f"stage{cls.count}", aliases=dict(input=f"input_{cls.count}")
+            test=TEST_PARAM_DEFAULT,
+            name=f"stage{cls.count}",
+            aliases=dict(input=f"input_{cls.count}"),
         )
 
 
@@ -56,15 +62,18 @@ class TestYawRailStage:
         assert set(StageTester.config_options) == (
             set(RailStage.config_options) | StageTester.algo_parameters | {"verbose"}
         )
+
+        # this is actually testing ceci code at the moment
         assert StageTester.__doc__.startswith("__doc__")
-        # NOTE: doc-strings not updated if StageTester has any abstract methods
         assert "test" in StageTester.__doc__
         assert "verbose" in StageTester.__doc__
 
     def test_get_algo_config_dict(self):
         test_stage = StageMakerAliased.make_stage()
+
         assert "test" in test_stage.get_algo_config_dict()
-        assert test_stage.get_algo_config_dict()["test"] == 0
+        assert test_stage.get_algo_config_dict()["test"] == TEST_PARAM_DEFAULT
+
         assert len(test_stage.get_algo_config_dict(exclude=["test"])) == 0
 
     def test_get_optional_handle(self):
@@ -80,11 +89,13 @@ class TestYawRailStage:
         test_stage = StageMakerAliased.make_stage()
         assert test_stage.get_optional_data("input") is None
 
+        # case: data provided in memory
         handle = make_test_handle()
         test_stage.add_data("input", handle.data)
         data = test_stage.get_optional_data("input")
         assert isinstance(data, DataFrame)
 
+        # case: data provided as file
         path = str(tmp_path / "data.parquet")
         data.to_parquet(path)
         test_stage2 = StageMakerAliased.make_stage()
