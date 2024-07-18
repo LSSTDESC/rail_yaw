@@ -4,6 +4,7 @@
 # notebook as well as the input test data required to run the pipeline.
 #
 
+# coverage is excluded since the code is run in an external interpreter
 # pylint: skip-file
 import argparse
 import os
@@ -42,7 +43,7 @@ corr_config = dict(
 )
 
 
-def create_datasets(root):
+def create_datasets(root):  # pragma: no cover
     test_data = get_dc2_test_data()
     redshifts = test_data["z"].to_numpy()
     n_data = len(test_data)
@@ -67,7 +68,7 @@ def create_datasets(root):
     return (data_path, rand_path)
 
 
-class YawPipeline(RailPipeline):
+class YawPipeline(RailPipeline):  # pragma: no cover
 
     def __init__(self, data_dir):
         super().__init__()
@@ -122,7 +123,7 @@ class YawPipeline(RailPipeline):
         )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     root = parser.parse_args().root
     print(f"setting working directory: {root}")
     if not os.path.exists(root):

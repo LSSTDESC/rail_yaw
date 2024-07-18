@@ -59,7 +59,6 @@ testpaths = [
 addopts = [
     "--cov=rail",
     "--cov-report=html",
-    "--cov-config=.coveragerc",
     "--slow",
 ]
 
