@@ -163,6 +163,8 @@ class YawCacheCreate(
         Get a valid data source from a handle for the YAW catalog loader.
 
         The function assumes that either the data or path attributes are set.
+        This function is necessary since pipelines provide only file paths,
+        whereas notebook users may pass the data in memory.
         """
         # no cover justfication: nothing to actually test here
         if handle.data is None:  # ceci: no data set but have data path
@@ -185,6 +187,7 @@ class YawCacheCreate(
 
         cache = YawCache.create(config["path"], overwrite=config["overwrite"])
 
+        # randoms are also an optional input and may not be present
         handle_rand: TableHandle | None = self.get_optional_handle("rand")
         if handle_rand is not None:
             cache.rand.set(
@@ -255,7 +258,10 @@ class YawAutoCorrelate(
     def run(self) -> None:
         cache_sample: YawCache = self.get_data("sample", allow_missing=True)
         data = cache_sample.data.get()
-        rand = cache_sample.rand.get()
+        try:
+            rand = cache_sample.rand.get()
+        except FileNotFoundError as err:
+            raise ValueError("no randoms provided") from err
 
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -332,7 +338,7 @@ class YawCrossCorrelate(
         """Get the catalog(s) from the given input cache handle"""
         cache: YawCache = self.get_data(tag, allow_missing=True)
         data = cache.data.get()
-        try:
+        try:  # NOTE: randoms are optional inputs for YawCacheCreate
             rand = cache.rand.get()
         except FileNotFoundError:
             rand = None

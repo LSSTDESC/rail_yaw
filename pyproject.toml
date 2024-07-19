@@ -59,6 +59,7 @@ testpaths = [
 addopts = [
     "--cov=rail",
     "--cov-report=html",
+    "--cov-report=term",
     "--slow",
 ]
 

@@ -89,16 +89,16 @@ class YawRailStage(ABC, RailStage):
     def __init_subclass__(
         cls, config_items: dict[str, StageParameter] | None = None, **kwargs
     ):
-        cls.name = cls.__name__
+        cls.name = cls.__name__  # standard RAIL practice
 
         if config_items is None:
             config_items = {}  # pragma: no cover
         else:
             config_items = config_items.copy()
-        cls.algo_parameters = set(config_items.keys())
+        cls.algo_parameters = set(config_items.keys())  # track all parameters
 
         cls.config_options = super().config_options.copy()
-        cls.config_options.update(config_items)
+        cls.config_options.update(config_items)  # standard RAIL practice
         cls.config_options["verbose"] = stage_config.yaw_verbose  # used for yaw logger
 
         super().__init_subclass__(**kwargs)  # delegate back to rail/ceci
@@ -148,8 +148,9 @@ class YawRailStage(ABC, RailStage):
             The handle or nothing if not set.
         """
         kwargs = kwargs.copy()
-        kwargs.update(allow_missing=True)
+        kwargs.update(allow_missing=True)  # this is required
         handle = self.get_handle(tag, **kwargs)
+        # the handle is only set if there is either a path or data
         if handle_has_path(handle) or handle.data is not None:
             return handle
         return None
@@ -171,8 +172,9 @@ class YawRailStage(ABC, RailStage):
             The handle's data or nothing if not set.
         """
         kwargs = kwargs.copy()
-        kwargs.update(allow_missing=True)
+        kwargs.update(allow_missing=True)  # this is required
         handle: DataHandle = self.get_handle(tag, **kwargs)
+        # test if handle has any data referenced, otherwise handle is not set
         if handle.data is not None:
             return handle.data
         if handle_has_path(handle):

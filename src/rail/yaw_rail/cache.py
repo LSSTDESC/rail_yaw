@@ -309,6 +309,7 @@ class YawCache:
 
         self.data = YawCatalog(os.path.join(self.path, "data"))
         self.rand = YawCatalog(os.path.join(self.path, "rand"))
+        # datasets should reference eachother to apply any existing patch centers
         self.data.set_patch_center_callback(self.rand)
         self.rand.set_patch_center_callback(self.data)
 
@@ -342,9 +343,10 @@ class YawCache:
                 raise FileExistsError(normalised)
             # check if path is valid cache directry and *only* then delete it
             try:
-                cls(path).drop()
+                tmp_cache = cls(path)
             except FileNotFoundError as err:
                 raise OSError("can only overwrite existing cache directories") from err
+            tmp_cache.drop()
 
         logger.info("creating new cache directory '%s'", normalised)
         os.makedirs(normalised)
@@ -375,7 +377,7 @@ class YawCache:
             return self.rand.get().centers
         if self.data.exists():
             return self.data.get().centers
-        raise FileNotFoundError("cache is empty")
+        raise FileNotFoundError("no data set cached")
 
     def n_patches(self) -> int:
         """

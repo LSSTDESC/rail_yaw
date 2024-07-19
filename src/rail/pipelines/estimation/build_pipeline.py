@@ -4,6 +4,7 @@
 # notebook as well as the input test data required to run the pipeline.
 #
 
+# coverage is excluded since the code is run in an external interpreter
 # pylint: skip-file
 import argparse
 import os
@@ -11,12 +12,11 @@ from shutil import rmtree
 
 from yaw import UniformRandoms
 
-from rail.core.stage import RailStage
+from rail.core.stage import RailPipeline, RailStage
 import rail.stages
 
 rail.stages.import_and_attach_all()
 from rail.stages import *
-from rail.yaw_rail.backports import FixedRailPipeline
 from rail.yaw_rail.utils import get_dc2_test_data
 
 try:  # TODO: remove when integrated in RAIL
@@ -43,7 +43,7 @@ corr_config = dict(
 )
 
 
-def create_datasets(root):
+def create_datasets(root):  # pragma: no cover
     test_data = get_dc2_test_data()
     redshifts = test_data["z"].to_numpy()
     n_data = len(test_data)
@@ -68,10 +68,10 @@ def create_datasets(root):
     return (data_path, rand_path)
 
 
-class YawPipeline(FixedRailPipeline):
+class YawPipeline(RailPipeline):  # pragma: no cover
 
-    def __init__(self, data_dir, log_dir):
-        FixedRailPipeline.__init__(self)
+    def __init__(self, data_dir):
+        super().__init__()
 
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
@@ -123,7 +123,7 @@ class YawPipeline(FixedRailPipeline):
         )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     root = parser.parse_args().root
     print(f"setting working directory: {root}")
     if not os.path.exists(root):
@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
     data_path, rand_path = create_datasets(data_dir)
 
-    pipe = YawPipeline(data_dir, log_dir)
+    pipe = YawPipeline(data_dir)
     pipe.initialize(
         overall_inputs=dict(
             data_ref=data_path,

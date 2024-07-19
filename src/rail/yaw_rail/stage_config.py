@@ -58,7 +58,6 @@ def create_param(
         values set.
     """
     category = category.lower().capitalize()
-
     metadata = get_yaw_config_meta(
         config_cls=getattr(config, f"{category}Config"),
         parname=parname,
