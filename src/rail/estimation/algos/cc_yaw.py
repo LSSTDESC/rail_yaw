@@ -258,7 +258,10 @@ class YawAutoCorrelate(
     def run(self) -> None:
         cache_sample: YawCache = self.get_data("sample", allow_missing=True)
         data = cache_sample.data.get()
-        rand = cache_sample.rand.get()
+        try:
+            rand = cache_sample.rand.get()
+        except FileNotFoundError as err:
+            raise ValueError("no randoms provided") from err
 
         with warnings.catch_warnings():
             warnings.simplefilter(action="ignore", category=FutureWarning)

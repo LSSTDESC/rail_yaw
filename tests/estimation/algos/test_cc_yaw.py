@@ -7,7 +7,7 @@ from subprocess import check_call
 
 import numpy as np
 import numpy.testing as npt
-from pytest import mark, raises, warns
+from pytest import fixture, mark, raises, warns
 
 from rail.estimation.algos import cc_yaw
 
@@ -18,8 +18,19 @@ def test_create_yaw_cache_alias():
     assert all(alias == f"{key}_{name}" for key, alias in aliases.items())
 
 
+@fixture(name="corr_config")
+def fixture_corr_config(zlim):
+    return dict(
+        rmin=500,
+        rmax=1500,
+        zmin=zlim[0],
+        zmax=zlim[1],
+        zbin_num=2,
+    )
+
+
 @mark.slow
-def test_missing_randoms(tmp_path, mock_data, zlim) -> None:
+def test_missing_randoms(tmp_path, mock_data, corr_config) -> None:
     # create two caches without randoms and try running cross-correlations
     cache_ref = cc_yaw.YawCacheCreate.make_stage(
         name="ref_norand",
@@ -40,13 +51,15 @@ def test_missing_randoms(tmp_path, mock_data, zlim) -> None:
     ).create(data=mock_data, patch_source=cache_ref)
 
     with raises(ValueError, match=".*no randoms.*"):
+        cc_yaw.YawAutoCorrelate.make_stage(
+            name="auto_corr_norand",
+            **corr_config,
+        ).correlate(sample=cache_ref)
+
+    with raises(ValueError, match=".*no randoms.*"):
         cc_yaw.YawCrossCorrelate.make_stage(
             name="cross_corr_norand",
-            rmin=500,
-            rmax=1500,
-            zmin=zlim[0],
-            zmax=zlim[1],
-            zbin_num=2,
+            **corr_config,
         ).correlate(reference=cache_ref, unknown=cache_unk)
 
 
@@ -115,16 +128,12 @@ def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
         ).create(data=mock_data, rand=mock_rand)
 
 
-def test_warn_thread_num_deprecation():
+def test_warn_thread_num_deprecation(corr_config):
     # until removal, the thread_num parameter should raise a warning
     with warns(FutureWarning, match=".*thread_num.*"):
         cc_yaw.YawCrossCorrelate.make_stage(
             name="cross_corr_thread_num",
-            rmin=500,
-            rmax=1500,
-            zmin=0.1,
-            zmax=0.2,
-            zbin_num=2,
+            **corr_config,
             thread_num=2,
         )
 

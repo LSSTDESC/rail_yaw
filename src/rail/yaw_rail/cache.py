@@ -343,9 +343,10 @@ class YawCache:
                 raise FileExistsError(normalised)
             # check if path is valid cache directry and *only* then delete it
             try:
-                cls(path).drop()
+                tmp_cache = cls(path)
             except FileNotFoundError as err:
                 raise OSError("can only overwrite existing cache directories") from err
+            tmp_cache.drop()
 
         logger.info("creating new cache directory '%s'", normalised)
         os.makedirs(normalised)
@@ -376,7 +377,7 @@ class YawCache:
             return self.rand.get().centers
         if self.data.exists():
             return self.data.get().centers
-        raise FileNotFoundError("cache is empty")
+        raise FileNotFoundError("no data set cached")
 
     def n_patches(self) -> int:
         """
