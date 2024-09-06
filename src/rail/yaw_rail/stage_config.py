@@ -18,11 +18,9 @@ __all__ = [
 ]
 
 
-def create_rail_config(
-    binning_cls: config.BaseConfig,
-) -> dict[str, StageParameter]:
+def create_rail_config(binning_cls: config.BaseConfig) -> dict[str, StageParameter]:
     """
-    TODO
+    Create a dictionary of `rail.StageParameter` from a `yaw`configuration class.
     """
     params = dict()
     for name, param in binning_cls.get_paramspec().items():
