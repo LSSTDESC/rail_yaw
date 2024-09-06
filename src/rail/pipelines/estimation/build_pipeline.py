@@ -27,10 +27,6 @@ except NameError:
 
 VERBOSE = "debug"  # verbosity level of built-in logger, disable with "error"
 
-MAX_WORKERS = 1  # NOTE: set this to None in a production environment,
-                 #       we want this here, because a small dataset runs faster
-                 #       when processing sequentially
-
 parser = argparse.ArgumentParser(
     description="Generate test data and build the rail_yaw ceci example pipeline."
 )
@@ -43,7 +39,6 @@ corr_config = dict(
     zmin=0.2,
     zmax=1.8,
     num_bins=8,
-    max_workers=MAX_WORKERS,
     verbose=VERBOSE,
 )
 
@@ -89,7 +84,6 @@ class YawPipeline(RailPipeline):  # pragma: no cover
             dec_name="dec",
             redshift_name="z",
             patch_num=5,
-            max_workers=MAX_WORKERS,
             verbose=VERBOSE,
         )
 
@@ -102,7 +96,6 @@ class YawPipeline(RailPipeline):  # pragma: no cover
             overwrite=True,
             ra_name="ra",
             dec_name="dec",
-            max_workers=MAX_WORKERS,
             verbose=VERBOSE,
         )
 

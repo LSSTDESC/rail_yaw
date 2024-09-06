@@ -11,7 +11,7 @@ cache_ref:
   patch_name: null
   patch_num: 5
   probe_size: -1
-  max_workers: 1
+  max_workers: null
   verbose: debug
   name: cache_ref
   config: null
@@ -28,7 +28,7 @@ cache_unk:
   patch_name: null
   patch_num: null
   probe_size: -1
-  max_workers: 1
+  max_workers: null
   verbose: debug
   name: cache_unk
   config: null
@@ -44,7 +44,7 @@ auto_corr:
   method: linear
   edges: null
   closed: right
-  max_workers: 1
+  max_workers: null
   verbose: debug
   name: auto_corr
   config: null
@@ -60,7 +60,7 @@ cross_corr:
   method: linear
   edges: null
   closed: right
-  max_workers: 1
+  max_workers: null
   verbose: debug
   name: cross_corr
   config: null
