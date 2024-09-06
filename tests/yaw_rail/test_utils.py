@@ -45,6 +45,14 @@ def make_test_handle() -> TableHandle:
     return TableHandle("test_tag", data=DataFrame(data))
 
 
+def make_stage_with_input() -> StageTester:
+    test_stage = StageMakerAliased.make_stage()
+    assert test_stage.get_optional_data("input") is None
+    handle = make_test_handle()
+    test_stage.add_data("input", handle.data)
+    return test_stage
+
+
 @mark.parametrize(
     "value,expect", [("/some/path", True), ("None", False), (None, False)]
 )
@@ -85,23 +93,22 @@ class TestYawRailStage:
         test_stage.add_handle("input", make_test_handle())
         test_stage.get_handle("input")
 
-    def test_get_optional_data(self, tmp_path):
-        test_stage = StageMakerAliased.make_stage()
-        assert test_stage.get_optional_data("input") is None
+    def test_get_optional_data_memory(self):
+        test_stage = make_stage_with_input()
 
-        # case: data provided in memory
-        handle = make_test_handle()
-        test_stage.add_data("input", handle.data)
         data = test_stage.get_optional_data("input")
         assert isinstance(data, DataFrame)
 
-        # case: data provided as file
+    def test_get_optional_data_file(self, tmp_path):
+        stage = make_stage_with_input()
+        # write the test data in order to read it back later
         path = str(tmp_path / "data.parquet")
-        data.to_parquet(path)
-        test_stage2 = StageMakerAliased.make_stage()
-        test_stage2.add_handle("input", path=path)
-        data2 = test_stage2.get_optional_data("input")
-        assert isinstance(data2.to_pandas(), DataFrame)
+        stage.get_optional_data("input").to_parquet(path)
+
+        test_stage = StageMakerAliased.make_stage()
+        test_stage.add_handle("input", path=path)
+        data = test_stage.get_optional_data("input")
+        assert isinstance(data.to_pandas(), DataFrame)
 
     def test_set_optional_data(self):
         test_stage = StageMakerAliased.make_stage()

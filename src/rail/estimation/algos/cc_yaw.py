@@ -20,24 +20,23 @@ from __future__ import annotations
 
 import warnings
 from itertools import chain
-from typing import Any, Literal
+from typing import TYPE_CHECKING
 
-from pandas import DataFrame
-from yaw import (
-    Configuration,
-    CorrFunc,
-    RedshiftData,
-    ResamplingConfig,
-    autocorrelate,
-    crosscorrelate,
-)
-from yaw.catalogs.scipy import ScipyCatalog
+from yaw import Configuration, RedshiftData, autocorrelate, crosscorrelate
 
-from rail.core.data import DataHandle, ModelHandle, TableHandle
+from rail.core.data import ModelHandle, TableHandle
 from rail.yaw_rail import stage_config
 from rail.yaw_rail.cache import YawCache, patch_centers_from_file
 from rail.yaw_rail.handles import YawCacheHandle, YawCorrFuncHandle
 from rail.yaw_rail.utils import YawRailStage, yaw_logged
+
+if TYPE_CHECKING:
+    from typing import Any, Literal
+
+    from pandas import DataFrame
+    from yaw import Catalog, CorrFunc
+
+    from rail.core.data import DataHandle
 
 __all__ = [
     "YawCacheCreate",
@@ -46,17 +45,6 @@ __all__ = [
     "YawSummarize",
     "create_yaw_cache_alias",
 ]
-
-
-def warn_thread_num_deprecation(config: dict):
-    """`thread_num` is deprecated when MPI backend is implemented."""
-    if config.get("thread_num", None) is not None:
-        warnings.warn(
-            "The 'thread_num' stage parameter is deprecated and will be removed "
-            "once the MPI parallelism is implemented.",
-            FutureWarning,
-            stacklevel=2,
-        )
 
 
 def create_yaw_cache_alias(suffix: str) -> dict[str, Any]:
@@ -81,12 +69,35 @@ def create_yaw_cache_alias(suffix: str) -> dict[str, Any]:
     return {key: f"{key}_{suffix}" for key in chain(keys_in, keys_out)}
 
 
+def create_yaw_autocorrelate_alias(suffix: str) -> dict[str, Any]:
+    """
+    Create an alias mapping for all `YawAutoCorrelate` stage in- and outputs.
+
+    Useful when creating a new stage with `make_stage`, e.g. by setting
+    `aliases=create_yaw_cache_alias("suffix")`.
+
+    Parameters
+    ----------
+    name : str
+        The suffix to append to the in- and output tags, e.g. `"data_suffix"`.
+
+    Returns
+    -------
+    dict
+        Mapping from original to aliased in- and output tags.
+    """
+    keys_in = (key for key, _ in YawAutoCorrelate.inputs)
+    keys_out = (key for key, _ in YawAutoCorrelate.outputs)
+    return {key: f"{key}_{suffix}" for key in chain(keys_in, keys_out)}
+
+
 class YawCacheCreate(
     YawRailStage,
     config_items=dict(
         **stage_config.cache,
         **stage_config.yaw_columns,
         **stage_config.yaw_patches,
+        max_workers=stage_config.yaw_max_workers,
     ),
 ):
     """
@@ -139,7 +150,7 @@ class YawCacheCreate(
         rand : DataFrame, optional
             The randoms to split into patches and cache, positions used to
             automatically generate patch centers if provided and stage is
-            configured with `n_patches`.
+            configured with `patch_num`.
         patch_source : YawCache, optional
             An existing cache instance that provides the patch centers. Use to
             ensure consistent patch centers when running cross-correlations.
@@ -211,7 +222,7 @@ class YawAutoCorrelate(
     config_items=dict(
         **stage_config.yaw_scales,
         **stage_config.yaw_zbins,
-        **stage_config.yaw_backend,
+        max_workers=stage_config.yaw_max_workers,
     ),
 ):
     """
@@ -229,10 +240,6 @@ class YawAutoCorrelate(
     outputs = [
         ("output", YawCorrFuncHandle),
     ]
-
-    def __init__(self, args, **kwargs):
-        super().__init__(args, **kwargs)
-        warn_thread_num_deprecation(self.get_algo_config_dict())
 
     def correlate(self, sample: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
         """
@@ -256,10 +263,11 @@ class YawAutoCorrelate(
 
     @yaw_logged
     def run(self) -> None:
+        max_workers = self.get_config_dict()["max_workers"]
         cache_sample: YawCache = self.get_data("sample", allow_missing=True)
-        data = cache_sample.data.get()
+        data = cache_sample.data.get(max_workers)
         try:
-            rand = cache_sample.rand.get()
+            rand = cache_sample.rand.get(max_workers)
         except FileNotFoundError as err:
             raise ValueError("no randoms provided") from err
 
@@ -269,8 +277,8 @@ class YawAutoCorrelate(
                 config=Configuration.create(**self.get_algo_config_dict()),
                 data=data,
                 random=rand,
-                compute_rr=True,
-            )
+                count_rr=True,
+            )[0]
 
         self.add_data("output", corr)
 
@@ -280,7 +288,7 @@ class YawCrossCorrelate(
     config_items=dict(
         **stage_config.yaw_scales,
         **stage_config.yaw_zbins,
-        **stage_config.yaw_backend,
+        max_workers=stage_config.yaw_max_workers,
     ),
 ):
     """
@@ -300,10 +308,6 @@ class YawCrossCorrelate(
     outputs = [
         ("output", YawCorrFuncHandle),
     ]
-
-    def __init__(self, args, **kwargs):
-        super().__init__(args, **kwargs)
-        warn_thread_num_deprecation(self.get_algo_config_dict())
 
     def correlate(
         self, reference: YawCacheHandle | YawCache, unknown: YawCacheHandle | YawCache
@@ -334,12 +338,13 @@ class YawCrossCorrelate(
     def _get_catalogs(
         self,
         tag: Literal["reference", "unknown"],
-    ) -> tuple[ScipyCatalog, ScipyCatalog | None]:
+    ) -> tuple[Catalog, Catalog | None]:
         """Get the catalog(s) from the given input cache handle"""
+        max_workers = self.get_config_dict()["max_workers"]
         cache: YawCache = self.get_data(tag, allow_missing=True)
-        data = cache.data.get()
+        data = cache.data.get(max_workers)
         try:  # NOTE: randoms are optional inputs for YawCacheCreate
-            rand = cache.rand.get()
+            rand = cache.rand.get(max_workers)
         except FileNotFoundError:
             rand = None
         return data, rand
@@ -359,18 +364,12 @@ class YawCrossCorrelate(
                 unknown=data_unk,
                 ref_rand=rand_ref,
                 unk_rand=rand_unk,
-            )
+            )[0]
 
         self.add_data("output", corr)
 
 
-class YawSummarize(
-    YawRailStage,
-    config_items=dict(
-        **stage_config.yaw_est,
-        **stage_config.yaw_resampling,
-    ),
-):
+class YawSummarize(YawRailStage):
     """
     A summarizer that computes a clustering redshift estimate from the measured
     correlation amplitudes.
@@ -393,11 +392,6 @@ class YawSummarize(
     outputs = [
         ("output", ModelHandle),
     ]
-
-    def __init__(self, args, **kwargs):
-        super().__init__(args, **kwargs)
-        config = {p: self.config_options[p].value for p in stage_config.yaw_resampling}
-        self.yaw_config = ResamplingConfig.create(**config)
 
     def summarize(
         self,
@@ -444,8 +438,6 @@ class YawSummarize(
             cross_corr=cross_corr,
             ref_corr=ref_corr,
             unk_corr=unk_corr,
-            config=ResamplingConfig(),
-            **self.get_algo_config_dict(exclude=stage_config.yaw_resampling),
         )
 
         self.add_data("output", nz_cc)

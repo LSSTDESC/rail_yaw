@@ -6,72 +6,34 @@ derive them, including their default values and documentation, from
 
 from __future__ import annotations
 
-from dataclasses import fields
-from typing import Any, Literal
-
-from yaw import config
-
 from ceci.config import StageParameter
+from yaw import config
 
 __all__ = [
     "cache",
-    "yaw_backend",
     "yaw_columns",
-    "yaw_est",
     "yaw_patches",
-    "yaw_resampling",
+    "yaw_max_workers",
     "yaw_scales",
 ]
 
 
-def get_yaw_config_meta(config_cls: Any, parname: str) -> dict[str, Any]:
-    """Convert the parameter metadata, embedded in the *yet_another_wizz*
-    configuration dataclasses, to a python dictionary."""
-    for field in fields(config_cls):
-        if field.name == parname:
-            return {k[4:]: v for k, v in field.metadata.items()}
-    raise AttributeError(f"{config_cls} has no attribute '{parname}'")
-
-
-def create_param(
-    category: Literal["backend", "binning", "scales", "resampling"],
-    parname: str,
-) -> StageParameter:
+def create_rail_config(
+    binning_cls: config.BaseConfig,
+) -> dict[str, StageParameter]:
     """
-    Hook into *yet_another_wizz* configuration and defaults to construct a
-    `StageParameter` from a *yet_another_wizz* configuration class.
-
-    Parameters
-    ----------
-    category : str
-        Prefix of one of the *yet_another_wizz* configuration classes that
-        defines the parameter of interest, e.g. `"scales"` for
-        `yaw.config.ScalesConfig`.
-    parname : str
-        The name of the parameter of interest, e.g. `"rmin"` for
-        `yaw.config.ScalesConfig.rmin`.
-
-    Returns
-    -------
-    StageParameter
-        Parameter metadata including `dtype`, `default`, `required` and `msg`
-        values set.
+    TODO
     """
-    category = category.lower().capitalize()
-    metadata = get_yaw_config_meta(
-        config_cls=getattr(config, f"{category}Config"),
-        parname=parname,
-    )
+    params = dict()
+    for name, param in binning_cls.get_paramspec().items():
+        params[name] = StageParameter(
+            msg=param.help,
+            dtype=param.type,
+            default=None if param.default is config.NotSet else param.default,
+            required=param.default is config.NotSet,
+        )
 
-    config_default = getattr(config.DEFAULT, category)
-    default = getattr(config_default, parname, None)
-
-    return StageParameter(
-        dtype=metadata.get("type"),
-        default=default,
-        required=metadata.get("required", False),
-        msg=metadata.get("help"),
-    )
+    return params
 
 
 #### all stages ####
@@ -83,6 +45,16 @@ yaw_verbose = StageParameter(
     msg="lowest log level emitted by *yet_another_wizz*",
 )
 """Stage parameter for the logging level."""
+
+
+#### shared ####
+
+yaw_max_workers = StageParameter(
+    int,
+    required=False,
+    msg="configure a custom maximum number of parallel workers to use",
+)
+"""Stage parameter controlling the maximum number of parallel workers."""
 
 
 #### YawCacheCreate ####
@@ -110,15 +82,21 @@ yaw_columns = dict(
         default="dec",
         msg="column name of declination (in degrees)",
     ),
+    weight_name=StageParameter(
+        str,
+        required=False,
+        msg="column name of weight",
+    ),
     redshift_name=StageParameter(
         str,
         required=False,
         msg="column name of redshift",
     ),
-    weight_name=StageParameter(
-        str,
+    degrees=StageParameter(
+        bool,
+        default=True,
         required=False,
-        msg="column name of weight",
+        msg="Whether the input coordinates are in degrees or radian.",
     ),
 )
 """Stage parameters to specify column names in the input data."""
@@ -135,10 +113,17 @@ yaw_patches = dict(
         required=False,
         msg="column name of patch index (starting from 0)",
     ),
-    n_patches=StageParameter(
+    patch_num=StageParameter(
         int,
         required=False,
         msg="number of spatial patches to create using knn on coordinates of randoms",
+    ),
+    probe_size=StageParameter(
+        int,
+        default=-1,
+        required=False,
+        msg="The approximate number of objects to sample from the input file "
+        "when generating patch centers.",
     ),
 )
 """Optional stage parameters to specify the patch creation stragegy."""
@@ -146,51 +131,8 @@ yaw_patches = dict(
 
 #### YawAuto/CrossCorrelate ####
 
-yaw_scales = {
-    p: create_param("scales", p) for p in ("rmin", "rmax", "rweight", "rbin_num")
-}
+yaw_scales = create_rail_config(config.ScalesConfig)
 """Stage parameters to configure the correlation measurements."""
 
-yaw_zbins = {
-    p: create_param("binning", p)
-    for p in ("zmin", "zmax", "zbin_num", "method", "zbins")
-}
+yaw_zbins = create_rail_config(config.BinningConfig)
 """Stage parameters to configure the redshift sampling of the redshift estimate."""
-
-# Since the current implementation does not support MPI, we need to implement
-# the number of threads manually. The code uses multiprocessing and can only
-# run on a single machine.
-yaw_backend = {
-    "thread_num": StageParameter(
-        int,
-        required=False,
-        msg="the number of threads to use by the multiprocessing backend",
-    )
-}
-"""Stage parameters to configure the computation."""
-
-
-#### YawSummarize ####
-
-# mapping from short-form name to full description of correlation functions
-_key_to_cf_name = dict(
-    cross="cross-correlation",
-    ref="reference sample autocorrelation",
-    unk="unknown sample autocorrelation",
-)
-yaw_est = {
-    f"{key}_est": StageParameter(
-        dtype=str, required=False, msg=f"Correlation estimator to use for {name}"
-    )
-    for key, name in _key_to_cf_name.items()
-}
-"""Stage parameters to specify estimators for each correlation function."""
-
-yaw_resampling = {
-    # resampling method: "method" (currently only "jackknife")
-    # bootstrapping (not implemented in yet_another_wizz): "n_boot", "seed"
-    # omitted: "global_norm"
-    p: create_param("resampling", p)
-    for p in ("crosspatch",)
-}
-"""Stage parameters to configure spatial resampling in `yet_another_wizz`."""

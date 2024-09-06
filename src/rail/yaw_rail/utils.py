@@ -8,18 +8,24 @@ used in the wrapper stages.
 from __future__ import annotations
 
 import logging
-import sys
 from abc import ABC, abstractmethod
-from collections.abc import Container
 from functools import lru_cache, wraps
-from typing import Any
+from typing import TYPE_CHECKING
 
-from pandas import DataFrame, read_parquet
+from pandas import read_parquet
+from yaw.utils import get_default_logger
 
-from ceci.config import StageParameter
-from rail.core.data import DataHandle
 from rail.core.stage import RailStage
 from rail.yaw_rail import stage_config
+
+if TYPE_CHECKING:
+    from collections.abc import Container
+    from typing import Any
+
+    from ceci.config import StageParameter
+    from pandas import DataFrame
+
+    from rail.core.data import DataHandle
 
 __all__ = [
     "YawRailStage",
@@ -202,29 +208,10 @@ class YawRailStage(ABC, RailStage):
         pass  # pragma: no cover
 
 
-class OnlyYawFilter(logging.Filter):
-    """A logging filter that rejects all messages not emitted by
-    *yet_another_wizz*."""
-
-    def filter(self, record):
-        record.exc_info = None
-        record.exc_text = None
-        return "yaw" in record.name
-
-
 def init_logger(level: str = "info") -> logging.Logger:
     """Init a logger that writes *yet_another_wizz* messages to stdout in a
     custom format."""
-    level = getattr(logging, level.upper())
-    formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
-
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(formatter)
-    handler.setLevel(level)
-    handler.addFilter(OnlyYawFilter())
-
-    logging.basicConfig(level=level, handlers=[handler])
-    return logging.getLogger()
+    return get_default_logger(level=level, show_welcome=False)
 
 
 def yaw_logged(method):

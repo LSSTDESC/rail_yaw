@@ -4,11 +4,14 @@ cache_ref:
   overwrite: true
   ra_name: ra
   dec_name: dec
-  redshift_name: z
   weight_name: null
+  redshift_name: z
+  degrees: true
   patch_file: null
   patch_name: null
-  n_patches: 5
+  patch_num: 5
+  probe_size: -1
+  max_workers: 1
   verbose: debug
   name: cache_ref
   config: null
@@ -18,11 +21,14 @@ cache_unk:
   overwrite: true
   ra_name: ra
   dec_name: dec
-  redshift_name: null
   weight_name: null
+  redshift_name: null
+  degrees: true
   patch_file: null
   patch_name: null
-  n_patches: null
+  patch_num: null
+  probe_size: -1
+  max_workers: 1
   verbose: debug
   name: cache_unk
   config: null
@@ -31,13 +37,14 @@ auto_corr:
   rmin: 100.0
   rmax: 1000.0
   rweight: null
-  rbin_num: 50
+  resolution: null
   zmin: 0.2
   zmax: 1.8
-  zbin_num: 8
+  num_bins: 8
   method: linear
-  zbins: null
-  thread_num: null
+  edges: null
+  closed: right
+  max_workers: 1
   verbose: debug
   name: auto_corr
   config: null
@@ -46,22 +53,19 @@ cross_corr:
   rmin: 100.0
   rmax: 1000.0
   rweight: null
-  rbin_num: 50
+  resolution: null
   zmin: 0.2
   zmax: 1.8
-  zbin_num: 8
+  num_bins: 8
   method: linear
-  zbins: null
-  thread_num: null
+  edges: null
+  closed: right
+  max_workers: 1
   verbose: debug
   name: cross_corr
   config: null
 summarize:
   output_mode: default
-  cross_est: null
-  ref_est: null
-  unk_est: null
-  crosspatch: true
   verbose: debug
   name: summarize
   config: null

@@ -10,18 +10,20 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 from shutil import rmtree
+from typing import TYPE_CHECKING
 
 import numpy as np
-from pandas import DataFrame
-from yaw.catalogs import NewCatalog
-from yaw.catalogs.scipy import ScipyCatalog
-from yaw.core.coordinates import Coordinate, CoordSky
+from yaw.catalog import Catalog
+from yaw.utils.coordinates import AngularCoordinates
+
+if TYPE_CHECKING:
+    from pandas import DataFrame
 
 __all__ = [
     "YawCache",
 ]
-
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ def normalise_path(path: str) -> str:
     return os.path.expandvars(os.path.expanduser(path))
 
 
-def patch_centers_from_file(path: str) -> CoordSky:
+def patch_centers_from_file(path: str) -> AngularCoordinates:
     """
     Load a list of patch centers from a file.
 
@@ -51,49 +53,9 @@ def patch_centers_from_file(path: str) -> CoordSky:
     """
     coords = np.loadtxt(path, ndmin=2)
     try:
-        return CoordSky.from_array(coords)
+        return AngularCoordinates(coords)
     except Exception as err:
         raise ValueError("invalid coordinate file format or schema") from err
-
-
-def get_patch_method(
-    patch_centers: ScipyCatalog | Coordinate | None,
-    patch_name: str | None,
-    n_patches: int | None,
-) -> ScipyCatalog | Coordinate | str | int:
-    """
-    Extract the preferred parameter value from the patch parameters, follow a
-    hierarchy of preference.
-
-    Parameters
-    ----------
-    patch_centers : ScipyCatalog, Coordinate or None
-        A *yet_another_wizz* catalog or coordinates, or `None` if not set.
-    patch_name : str or None
-        The name of the column that list the patch indices or `None` if not set.
-    n_patches: int or None
-        The number of patches to generate using k-means clustering or `None` if
-        not set.
-
-    Returns
-    -------
-    ScipyCatalog, Coordinate, str, or int
-        The preferred parameter value to configure the patch creation.
-
-    Raises
-    ------
-    ValueError
-        If all parameter values are set to `None`.
-    """
-    # NOTE: "consistent" referes to the consistency of patch centers of two
-    # catalogs created with a particular patch creation method.
-    if patch_centers is not None:  # deterministic and consistent
-        return patch_centers
-    if patch_name is not None:  # deterministic but assumes consistency
-        return patch_name
-    if n_patches is not None:  # non-determistic and never consistent
-        return n_patches
-    raise ValueError("no patch creation method specified")
 
 
 class YawCatalog:
@@ -109,7 +71,7 @@ class YawCatalog:
 
     path: str
     """Path to the directory in which the data is cached."""
-    catalog: ScipyCatalog | None
+    catalog: Catalog | None
     """Catalog instance or `None` if no data is cached yet."""
 
     def __init__(self, path: str) -> None:
@@ -136,7 +98,7 @@ class YawCatalog:
         if cat is None:
             self._patch_center_callback = None
         elif isinstance(cat, YawCatalog):
-            self._patch_center_callback = lambda: cat.get().centers
+            self._patch_center_callback = lambda: cat.get().get_centers()
         else:
             raise TypeError("referenced catalog is not a 'YawCatalog'")
 
@@ -144,11 +106,16 @@ class YawCatalog:
         """Whether the catalog's cache directory exists."""
         return os.path.exists(self.path)
 
-    def get(self) -> ScipyCatalog:
+    def get(self, max_workers: int | None = None) -> Catalog:
         """
         Access the catalog instance without loading all data to memory.
 
         Retrieves the catalog metadata from disk if not in memory.
+
+        Parameters
+        ----------
+        max_workers: int, optional
+            Number of parallel workers to use for processing the input data.
 
         Returns
         -------
@@ -163,7 +130,7 @@ class YawCatalog:
         if not self.exists():
             raise FileNotFoundError(f"no catalog cached at {self.path}")
         if self.catalog is None:
-            self.catalog = NewCatalog().from_cache(self.path)
+            self.catalog = Catalog(self.path, max_workers=max_workers)
         return self.catalog
 
     def set(
@@ -172,14 +139,17 @@ class YawCatalog:
         ra_name: str,
         dec_name: str,
         *,
-        patch_centers: ScipyCatalog | Coordinate | None = None,
+        patch_centers: Catalog | AngularCoordinates | None = None,
         patch_name: str | None = None,
-        n_patches: int | None = None,
+        patch_num: int | None = None,
         redshift_name: str | None = None,
         weight_name: str | None = None,
+        degrees: bool = True,
         overwrite: bool = False,
+        max_workers: int | None = None,
+        probe_size: int = -1,
         **kwargs,  # pylint: disable=W0613; allows dict-unpacking of whole config
-    ) -> ScipyCatalog:
+    ) -> Catalog:
         """
         Split a new data set in spatial patches and cache it.
 
@@ -188,22 +158,29 @@ class YawCatalog:
         source : DataFrame or str
             Data source, either a `DataFrame` or a FITS, Parquet, or HDF5 file.
         ra_name : str
-            Column name of right ascension data in degrees.
+            Column name of right ascension data.
         dec_name : str
-            Column name of declination data in degrees.
+            Column name of declination data.
+        weight_name: str or None, optional
+            Column name of per-object weigths.
+        redshift_name : str or None, optional
+            Column name of redshifts.
         patch_centers : ScipyCatalog, Coordinate or None
             A *yet_another_wizz* catalog or coordinates, or `None` if not set.
         patch_name : str or None
             The name of the column that list the patch indices or `None` if not set.
-        n_patches: int or None
+        patch_num: int or None
             The number of patches to generate using k-means clustering or `None` if
             not set.
-        redshift_name : str or None, optional
-            Column name of redshifts.
-        weight_name: str or None, optional
-            Column name of per-object weigths.
+        degrees : bool, optional
+            Whether the input coordinates are in degrees or radian.
         overwrite: bool, optional
             Whether to overwrite an existing, cached data set.
+        max_workers: int, optional
+            Number of parallel workers to use for processing the input data.
+        probe_size : int, optional
+            The approximate number of objects to sample from the input file when
+            generating patch centers.
 
         Returns
         -------
@@ -215,12 +192,8 @@ class YawCatalog:
         FileExistsError
             If there is already a data set cached and `overwrite` is not set.
         """
-        if self.exists():
-            if overwrite:
-                rmtree(self.path)
-            else:
-                raise FileExistsError(self.path)
-        os.makedirs(self.path)
+        if not overwrite and os.path.exists(self.path):
+            raise FileExistsError(self.path)
 
         # check if any reference catalog is registered that overwrites the
         # provided patch centers
@@ -229,38 +202,26 @@ class YawCatalog:
         except (TypeError, FileNotFoundError):
             pass
 
-        if isinstance(source, str):  # dealing with a file
-            patches = get_patch_method(
-                patch_centers=patch_centers,
-                patch_name=patch_name,
-                n_patches=n_patches,
-            )
-            self.catalog = NewCatalog().from_file(
-                filepath=source,
-                patches=patches,
-                ra=ra_name,
-                dec=dec_name,
-                redshift=redshift_name,
-                weight=weight_name,
-                cache_directory=self.path,
-            )
-
+        if isinstance(source, (str, Path)):
+            constructor = Catalog.from_file
         else:
-            # ensure that patch_centers are always used if provided
-            if patch_centers is not None:
-                patch_name = None
-                n_patches = None
-            self.catalog = NewCatalog().from_dataframe(
-                data=source,
-                ra_name=ra_name,
-                dec_name=dec_name,
-                patch_centers=patch_centers,
-                patch_name=patch_name,
-                n_patches=n_patches,
-                redshift_name=redshift_name,
-                weight_name=weight_name,
-                cache_directory=self.path,
-            )
+            constructor = Catalog.from_dataframe
+
+        self.catalog = constructor(
+            self.path,
+            source,
+            ra_name=ra_name,
+            dec_name=dec_name,
+            weight_name=weight_name,
+            redshift_name=redshift_name,
+            patch_centers=patch_centers,
+            patch_name=patch_name,
+            patch_num=patch_num,
+            degrees=degrees,
+            overwrite=overwrite,
+            max_workers=max_workers,
+            probe_size=probe_size,
+        )
 
     def drop(self) -> None:
         """Delete the cached data from disk and unset the catalog instance."""
@@ -356,9 +317,9 @@ class YawCache:
         return cls(path)
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}(path='{self.path}')"
+        return f"{type(self).__name__}(path='{self.path}')"
 
-    def get_patch_centers(self) -> CoordSky:
+    def get_patch_centers(self) -> AngularCoordinates:
         """
         Get the patch center coordinates.
 
@@ -374,12 +335,13 @@ class YawCache:
             If not data is cached yet.
         """
         if self.rand.exists():
-            return self.rand.get().centers
+            return self.rand.get().get_centers()
         if self.data.exists():
-            return self.data.get().centers
+            return self.data.get().get_centers()
         raise FileNotFoundError("no data set cached")
 
-    def n_patches(self) -> int:
+    @property
+    def num_patches(self) -> int:
         """
         Get the number of spatial patches.
 

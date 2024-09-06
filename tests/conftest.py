@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pytest import fixture
-from yaw import UniformRandoms
+from rail.pipelines.estimation.randoms_yaw_v2 import UniformRandoms
 
 from rail.core.stage import RailStage
 from rail.yaw_rail.utils import get_dc2_test_data

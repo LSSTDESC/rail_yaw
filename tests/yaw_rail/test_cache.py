@@ -1,19 +1,16 @@
 from __future__ import annotations
 
 import os
-from typing import TYPE_CHECKING
 
 import numpy as np
+from pandas import DataFrame
 from numpy.testing import assert_array_equal
-from pytest import fixture, raises
-from yaw.core.coordinates import CoordSky
+from numpy.typing import NDArray
+from pytest import fixture, raises, mark
+from yaw.catalog import Catalog
+from yaw.utils.coordinates import AngularCoordinates
 
 from rail.yaw_rail import cache
-
-if TYPE_CHECKING:
-    from numpy.typing import NDArray
-    from pandas import DataFrame
-    from yaw.catalogs.scipy import ScipyCatalog
 
 
 def test_patch_centers_from_file(tmp_path):
@@ -34,27 +31,6 @@ def test_patch_centers_from_file(tmp_path):
         cache.patch_centers_from_file(path)
 
 
-def test_get_patch_method():
-    # test the parameter hierarchy
-    kwargs = dict(
-        patch_centers=CoordSky([1.0], [1.0]),
-        patch_name="patch",
-        n_patches=1,
-    )
-    assert cache.get_patch_method(**kwargs) == kwargs["patch_centers"]
-
-    kwargs["patch_centers"] = None
-    assert cache.get_patch_method(**kwargs) == kwargs["patch_name"]
-
-    kwargs["patch_name"] = None
-    assert cache.get_patch_method(**kwargs) == kwargs["n_patches"]
-
-    # no values given
-    kwargs["n_patches"] = None
-    with raises(ValueError):
-        cache.get_patch_method(**kwargs)
-
-
 @fixture(name="column_kwargs")
 def fixture_column_kwargs() -> dict[str, str]:
     return dict(
@@ -62,6 +38,7 @@ def fixture_column_kwargs() -> dict[str, str]:
         dec_name="dec",
         redshift_name="z",
         weight_name="index",
+        max_workers=1,  # disable multiprocessing
     )
 
 
@@ -85,10 +62,15 @@ def write_and_get_path(path: str, data: DataFrame) -> str:
     return str(path)
 
 
-def get_redshifts_ordered(cat: ScipyCatalog) -> NDArray:
+def get_redshifts_ordered(cat: Catalog) -> NDArray:
     # use the weight column to get original order (see fixture_mock_data_indexed)
     order = np.argsort(cat.weights)
     return cat.redshifts[order]
+
+
+def assert_coords_equal(coord1: AngularCoordinates, coord2: AngularCoordinates) -> None:
+    assert_array_equal(coord1.ra, coord2.ra)
+    assert_array_equal(coord1.dec, coord2.dec)
 
 
 class TestYawCatalog:
@@ -99,10 +81,10 @@ class TestYawCatalog:
         assert not inst.exists()
 
         # write the testdata to the cache directory and try to open the cache
-        inst.set(mock_data_indexed, **column_kwargs, n_patches=2)
+        inst.set(mock_data_indexed, **column_kwargs, patch_num=2)
         inst = cache.YawCatalog(tmp_path / "cat")
         assert inst.exists()
-        assert inst.get()  # check that testdata is loaded
+        assert inst.get()
 
         # check that drop removes the cache directory
         inst.drop()
@@ -114,14 +96,13 @@ class TestYawCatalog:
     ):  # pylint: disable=W0212
         # create a cache and add testdata, which will be the patch reference
         ref = cache.YawCatalog(tmp_path / "ref")
-        ref.set(mock_data_indexed, **column_kwargs, n_patches=2)
+        ref.set(mock_data_indexed, **column_kwargs, patch_num=2)
 
         # check that the returned center coordinates match those of the testdata
         inst = cache.YawCatalog(tmp_path / "cat")
         inst.set_patch_center_callback(ref)  # link testdata to find patch centers
         fetched_centers = inst._patch_center_callback()
-        assert_array_equal(fetched_centers.ra, ref.get().centers.ra)
-        assert_array_equal(fetched_centers.dec, ref.get().centers.dec)
+        assert_coords_equal(fetched_centers, ref.get().get_centers())
 
         # remove the link to the test data
         inst.set_patch_center_callback(None)
@@ -137,18 +118,18 @@ class TestYawCatalog:
         with raises(FileNotFoundError):
             inst.get()
 
-        inst.set(mock_data_indexed, n_patches=2, **column_kwargs)
+        inst.set(mock_data_indexed, patch_num=2, **column_kwargs)
         with raises(FileExistsError):
-            inst.set(mock_data_indexed, n_patches=2, **column_kwargs)
+            inst.set(mock_data_indexed, patch_num=2, overwrite=False, **column_kwargs)
 
-    def test_set_n_patches(self, tmp_path, column_kwargs, mock_data_indexed):
+    def test_set_num_patches(self, tmp_path, column_kwargs, mock_data_indexed):
         # create a copy of the data set by writing to a file
         path = write_and_get_path(tmp_path / "data.pqt", mock_data_indexed)
 
         inst = cache.YawCatalog(tmp_path / "cache")
         for data_source in [mock_data_indexed, path]:
-            inst.set(data_source, n_patches=2, **column_kwargs, overwrite=True)
-            assert inst.get().n_patches == 2
+            inst.set(data_source, patch_num=2, **column_kwargs, overwrite=True)
+            assert inst.get().num_patches == 2
 
     def test_set_patch_name(self, tmp_path, mock_data_indexed, column_kwargs):
         # create a copy of the data set by writing to a file
@@ -159,11 +140,10 @@ class TestYawCatalog:
         for data_source in (mock_data_indexed, path):
             inst = cache.YawCatalog(tmp_path / "cache")
             inst.set(data_source, patch_name="patch", **column_kwargs, overwrite=True)
-            assert inst.get().n_patches == N_PATCHES_COLUMN
+            assert inst.get().num_patches == N_PATCHES_COLUMN
 
             yaw_catalog = inst.get()
-            yaw_catalog.load()
-            for i, patch in enumerate(yaw_catalog):
+            for i, patch in enumerate(yaw_catalog.values()):
                 assert np.all(patch.weights % N_PATCHES_COLUMN == i)
 
     def test_set_patch_center(self, tmp_path, mock_data_indexed, column_kwargs):
@@ -172,20 +152,24 @@ class TestYawCatalog:
 
         # create a reference set of patch centers
         inst = cache.YawCatalog(tmp_path / "cache")
-        inst.set(mock_data_indexed, n_patches=4, **column_kwargs)
-        ref_centers = inst.get().centers
+        inst.set(mock_data_indexed, patch_num=4, **column_kwargs)
+        ref_centers = inst.get().get_centers()
 
         # check that the patch centers remain fixed when constructing patches
         # with the reference centers
         for source in [mock_data_indexed, path]:
             inst.set(source, patch_centers=ref_centers, **column_kwargs, overwrite=True)
-            assert_array_equal(inst.get().centers.ra, ref_centers.ra)
-            assert_array_equal(inst.get().centers.dec, ref_centers.dec)
+            assert_coords_equal(inst.get().get_centers(), ref_centers)
 
-    def test_set_with_callback(self, tmp_path, mock_data_indexed, column_kwargs):
-        n_patches = 3
+    @mark.parametrize(
+        "patch_param, value",
+        [("patch_num", 2), ("patch_name", "patch"), ("patch_centers", None)],
+    )
+    def test_set_with_callback(
+        self, tmp_path, mock_data_indexed, column_kwargs, patch_param, value
+    ):
         ref = cache.YawCatalog(tmp_path / "ref")
-        ref.set(mock_data_indexed, n_patches=n_patches, **column_kwargs)
+        ref.set(mock_data_indexed, patch_num=3, **column_kwargs)
 
         # create cache that links to reference cache to determine patch centers
         inst = cache.YawCatalog(tmp_path / "cache")
@@ -193,15 +177,13 @@ class TestYawCatalog:
 
         # try adding data with only two patch centers and verify that in every
         # case the three centers from the reference are used
-        for key, value in zip(
-            ["n_patches", "patch_name", "patch_centers"],
-            [2, "patch", ref.get().centers[:2]],
-        ):
-            patch_conf = {key: value}
-            inst.set(mock_data_indexed, **patch_conf, **column_kwargs, overwrite=True)
-            assert len(inst.get().centers) == n_patches
-            assert_array_equal(ref.get().centers.ra, inst.get().centers.ra)
-            assert_array_equal(ref.get().centers.dec, inst.get().centers.dec)
+        if value is None:
+            value = ref.get().get_centers()[:2]
+
+        patch_conf = {patch_param: value}
+        inst.set(mock_data_indexed, **patch_conf, **column_kwargs, overwrite=True)
+        assert inst.get().num_patches == ref.get().num_patches
+        assert_coords_equal(ref.get().get_centers(), inst.get().get_centers())
 
 
 class TestYawCache:
@@ -243,32 +225,30 @@ class TestYawCache:
         with raises(OSError):
             cache.YawCache.create(path, overwrite=True)
 
-    def test_patch_centers(self, tmp_path, mock_data_indexed, column_kwargs):
+    @mark.parametrize(
+        "create_first, create_second", [("data", "rand"), ("rand", "data")]
+    )
+    def test_patch_centers2(
+        self, tmp_path, mock_data_indexed, column_kwargs, create_first, create_second
+    ):
         inst = cache.YawCache.create(tmp_path / "cache")
         with raises(FileNotFoundError):
             inst.get_patch_centers()
         inst.drop()
 
-        # check that the centers from the dataset, registered first, is applied
-        # to the second
-        def create_fill_check_cache(use_first, use_second):
-            inst = cache.YawCache.create(tmp_path / "cache")
-            getattr(inst, use_first).set(
-                mock_data_indexed, patch_name="patch", **column_kwargs
-            )
-            assert len(inst.get_patch_centers()) == inst.n_patches()
+        inst = cache.YawCache.create(tmp_path / "cache")
+        getattr(inst, create_first).set(
+            mock_data_indexed, patch_name="patch", **column_kwargs
+        )
+        assert len(inst.get_patch_centers()) == inst.num_patches
 
-            getattr(inst, use_second).set(
-                mock_data_indexed, n_patches=3, **column_kwargs
-            )
-            assert len(inst.data.get().centers) == 2
-            assert_array_equal(inst.rand.get().centers.ra, inst.data.get().centers.ra)
-
-            inst.drop()  # clean up for reuse
-
-        # test both ways
-        create_fill_check_cache("data", "rand")
-        create_fill_check_cache("rand", "data")
+        getattr(inst, create_second).set(
+            mock_data_indexed, patch_num=3, **column_kwargs
+        )
+        assert len(inst.data.get().get_centers()) == 2
+        assert_coords_equal(
+            inst.rand.get().get_centers(), inst.data.get().get_centers()
+        )
 
     def test_drop(self, tmp_path):
         path = tmp_path / "cache"

@@ -7,7 +7,7 @@ from subprocess import check_call
 
 import numpy as np
 import numpy.testing as npt
-from pytest import fixture, mark, raises, warns
+from pytest import fixture, mark, raises
 
 from rail.estimation.algos import cc_yaw
 
@@ -26,6 +26,7 @@ def fixture_corr_config(zlim):
         zmin=zlim[0],
         zmax=zlim[1],
         zbin_num=2,
+        max_workers=1,
     )
 
 
@@ -39,7 +40,8 @@ def test_missing_randoms(tmp_path, mock_data, corr_config) -> None:
         ra_name="ra",
         dec_name="dec",
         redshift_name="z",
-        n_patches=3,
+        patch_num=3,
+        max_workers=1,
     ).create(data=mock_data)
 
     cache_unk = cc_yaw.YawCacheCreate.make_stage(
@@ -65,7 +67,7 @@ def test_missing_randoms(tmp_path, mock_data, corr_config) -> None:
 
 @mark.slow
 def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
-    # check that the n_patches parameter works
+    # check that the patch_num parameter works
     cache_ref = cc_yaw.YawCacheCreate.make_stage(
         name="ref_n_patch",
         aliases=cc_yaw.create_yaw_cache_alias("ref_n_patch"),
@@ -73,17 +75,18 @@ def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
         ra_name="ra",
         dec_name="dec",
         redshift_name="z",
-        n_patches=3,
+        patch_num=3,
+        max_workers=1,
     ).create(data=mock_data, rand=mock_rand)
     assert cache_ref.data.data.exists()
-    assert cache_ref.data.n_patches() == 3
+    assert cache_ref.data.num_patches == 3
     # save coordinates for later use
     np.savetxt(
         str(tmp_path / "coords"),
-        cache_ref.data.get_patch_centers().values,
+        cache_ref.data.get_patch_centers().data,
     )
 
-    # check that patch_source stage input overwrites n_patches config parameter
+    # check that patch_source stage input overwrites patch_num config parameter
     # (don't need to test other parameters explicitly)
     cache = cc_yaw.YawCacheCreate.make_stage(
         name="ref_override",
@@ -92,9 +95,10 @@ def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
         ra_name="ra",
         dec_name="dec",
         redshift_name="z",
-        n_patches=cache_ref.data.n_patches() + 1,
+        patch_num=cache_ref.data.num_patches + 1,
+        max_workers=1,
     ).create(data=mock_data, rand=mock_rand, patch_source=cache_ref)
-    assert cache.data.n_patches() == cache_ref.data.n_patches()
+    assert cache.data.num_patches == cache_ref.data.num_patches
 
     # check that patch_file config reproduces the original patch centers
     cache = cc_yaw.YawCacheCreate.make_stage(
@@ -105,6 +109,7 @@ def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
         dec_name="dec",
         redshift_name="z",
         patch_file=str(tmp_path / "coords"),
+        max_workers=1,
     ).create(data=mock_data, rand=mock_rand)
     npt.assert_almost_equal(
         cache.data.get_patch_centers().ra,
@@ -125,17 +130,8 @@ def test_cache_args(tmp_path, mock_data, mock_rand) -> None:
             ra_name="ra",
             dec_name="dec",
             redshift_name="z",
+            max_workers=1,
         ).create(data=mock_data, rand=mock_rand)
-
-
-def test_warn_thread_num_deprecation(corr_config):
-    # until removal, the thread_num parameter should raise a warning
-    with warns(FutureWarning, match=".*thread_num.*"):
-        cc_yaw.YawCrossCorrelate.make_stage(
-            name="cross_corr_thread_num",
-            **corr_config,
-            thread_num=2,
-        )
 
 
 def write_expect_ncc(path: Path) -> Path:
@@ -145,15 +141,15 @@ def write_expect_ncc(path: Path) -> Path:
     with open(target_path, "w") as f:
         f.write(
             """# n(z) estimate with symmetric 68% percentile confidence
-#    z_low     z_high         nz     nz_err
- 0.2000000  0.4000000  0.1160194  0.0957173
- 0.4000000  0.6000000  0.0898476  0.0616907
- 0.6000000  0.8000000  0.1367271  0.0815823
- 0.8000000  1.0000000  0.2435591  0.0549643
- 1.0000000  1.2000000  0.1789916  0.0656216
- 1.2000000  1.4000000  0.1954614  0.0690626
- 1.4000000  1.6000000  0.1802148  0.0765422
- 1.6000000  1.8000000  0.1872289  0.0729730
+#   (z_low    z_high]         nz     nz_err
+ 0.2000000  0.4000000  0.0965150  0.0895655
+ 0.4000000  0.6000000  0.1000126  0.0496321
+ 0.6000000  0.8000000  0.1431271  0.0520753
+ 0.8000000  1.0000000  0.2423559  0.0221838
+ 1.0000000  1.2000000  0.1849689  0.0735489
+ 1.2000000  1.4000000  0.1879792  0.0401212
+ 1.4000000  1.6000000  0.1716867  0.0822341
+ 1.6000000  1.8000000  0.1856554  0.0917291
 """
         )
     return target_path
@@ -189,6 +185,6 @@ def test_ceci_pipeline(tmp_path) -> None:
     expect_data = np.loadtxt(expect_path).T
     output_data = np.loadtxt(f"{output_prefix}.dat").T
     for i, (col_a, col_b) in enumerate(zip(expect_data, output_data)):
-        if i == 3:  # error column differs every time since using n_patches
+        if i == 3:  # error column differs every time since using patch_num
             break
         npt.assert_array_equal(col_a, col_b)

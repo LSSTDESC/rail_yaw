@@ -1,6 +1,6 @@
 [project]
 name = "pz-rail-yaw"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = {file = "LICENSE"}
 description = "Wrapper around the yet_another_wizz clustering redshift code for RAIL"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -18,13 +18,10 @@ classifiers = [
 dynamic = ["version"]
 
 dependencies = [
-    "numpy",
+    "numpy>=2.0",
     "h5py",
     "pz-rail-base>=1.0.3",
-    "qp-prob",
-    # fix yet_another_wizz version; if there is a new release, issue a new
-    # patch or minor version release, depending on the changes requred
-    "yet_another_wizz==2.5.8",
+    "yet_another_wizz@git+https://github.com/jlvdb/yet_another_wizz@v3.0-alpha",
 ]
 
 [project.urls]

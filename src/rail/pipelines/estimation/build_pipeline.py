@@ -10,13 +10,13 @@ import argparse
 import os
 from shutil import rmtree
 
-from yaw import UniformRandoms
-
-from rail.core.stage import RailPipeline, RailStage
 import rail.stages
+from rail.core.stage import RailPipeline, RailStage
+from rail.pipelines.estimation.randoms_yaw_v2 import UniformRandoms
 
 rail.stages.import_and_attach_all()
 from rail.stages import *
+
 from rail.yaw_rail.utils import get_dc2_test_data
 
 try:  # TODO: remove when integrated in RAIL
@@ -26,6 +26,10 @@ except NameError:
 
 
 VERBOSE = "debug"  # verbosity level of built-in logger, disable with "error"
+
+MAX_WORKERS = 1  # NOTE: set this to None in a production environment,
+                 #       we want this here, because a small dataset runs faster
+                 #       when processing sequentially
 
 parser = argparse.ArgumentParser(
     description="Generate test data and build the rail_yaw ceci example pipeline."
@@ -38,7 +42,8 @@ corr_config = dict(
     rmax=1000,
     zmin=0.2,
     zmax=1.8,
-    zbin_num=8,
+    num_bins=8,
+    max_workers=MAX_WORKERS,
     verbose=VERBOSE,
 )
 
@@ -83,7 +88,8 @@ class YawPipeline(RailPipeline):  # pragma: no cover
             ra_name="ra",
             dec_name="dec",
             redshift_name="z",
-            n_patches=5,
+            patch_num=5,
+            max_workers=MAX_WORKERS,
             verbose=VERBOSE,
         )
 
@@ -96,6 +102,7 @@ class YawPipeline(RailPipeline):  # pragma: no cover
             overwrite=True,
             ra_name="ra",
             dec_name="dec",
+            max_workers=MAX_WORKERS,
             verbose=VERBOSE,
         )
 
