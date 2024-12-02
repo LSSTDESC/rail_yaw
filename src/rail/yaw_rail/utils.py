@@ -13,7 +13,7 @@ from functools import lru_cache, wraps
 from typing import TYPE_CHECKING
 
 from pandas import read_parquet
-from yaw.utils import get_default_logger
+from yaw.utils import get_logger
 
 from rail.core.stage import RailStage
 from rail.yaw_rail import stage_config
@@ -211,7 +211,7 @@ class YawRailStage(ABC, RailStage):
 def init_logger(level: str = "info") -> logging.Logger:
     """Init a logger that writes *yet_another_wizz* messages to stdout in a
     custom format."""
-    return get_default_logger(level=level, show_welcome=False)
+    return get_logger(level=level)
 
 
 def yaw_logged(method):

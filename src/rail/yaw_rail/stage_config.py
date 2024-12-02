@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from ceci.config import StageParameter
 from yaw import config
+from yaw.options import NotSet
 
 __all__ = [
     "cache",
@@ -27,8 +28,8 @@ def create_rail_config(binning_cls: config.BaseConfig) -> dict[str, StageParamet
         params[name] = StageParameter(
             msg=param.help,
             dtype=param.type,
-            default=None if param.default is config.NotSet else param.default,
-            required=param.default is config.NotSet,
+            default=None if param.default is NotSet else param.default,
+            required=param.default is NotSet,
         )
 
     return params

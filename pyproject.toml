@@ -21,7 +21,7 @@ dependencies = [
     "numpy>=2.0",
     "h5py",
     "pz-rail-base>=1.0.3",
-    "yet_another_wizz@git+https://github.com/jlvdb/yet_another_wizz@v3.0-alpha",
+    "yet_another_wizz>=3.0.5",
 ]
 
 [project.urls]

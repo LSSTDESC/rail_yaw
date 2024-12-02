@@ -8,7 +8,7 @@ from numpy.testing import assert_array_equal
 from numpy.typing import NDArray
 from pytest import fixture, raises, mark
 from yaw.catalog import Catalog
-from yaw.utils.coordinates import AngularCoordinates
+from yaw.coordinates import AngularCoordinates
 
 from rail.yaw_rail import cache
 

@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from yaw.catalog import Catalog
-from yaw.utils.coordinates import AngularCoordinates
+from yaw.coordinates import AngularCoordinates
 
 if TYPE_CHECKING:
     from pandas import DataFrame
