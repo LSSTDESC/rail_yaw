@@ -21,7 +21,7 @@ dependencies = [
     "numpy>=2.0",
     "h5py",
     "pz-rail-base>=1.0.3",
-    "yet_another_wizz>=3.0.5",
+    "yet_another_wizz>=3.0.7",
 ]
 
 [project.urls]

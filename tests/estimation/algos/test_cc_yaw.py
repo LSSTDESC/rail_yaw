@@ -184,7 +184,7 @@ def test_ceci_pipeline(tmp_path) -> None:
     expect_path = write_expect_ncc(tmp_path)
     expect_data = np.loadtxt(expect_path).T
     output_data = np.loadtxt(f"{output_prefix}.dat").T
-    for i, (col_a, col_b) in enumerate(zip(expect_data, output_data)):
+    for i, (col_a, col_b) in enumerate(zip(output_data, expect_data)):
         if i == 3:  # error column differs every time since using patch_num
             break
         npt.assert_array_equal(col_a, col_b)

@@ -10,9 +10,11 @@ import argparse
 import os
 from shutil import rmtree
 
+import pandas as pd
+from yaw.randoms import BoxRandoms
+
 import rail.stages
 from rail.core.stage import RailPipeline, RailStage
-from rail.pipelines.estimation.randoms_yaw_v2 import UniformRandoms
 
 rail.stages.import_and_attach_all()
 from rail.stages import *
@@ -52,14 +54,16 @@ def create_datasets(root):  # pragma: no cover
     data_path = os.path.join(root, data_name)
     test_data.to_parquet(data_path)
 
-    angular_rng = UniformRandoms(
+    generator = BoxRandoms(
         test_data["ra"].min(),
         test_data["ra"].max(),
         test_data["dec"].min(),
         test_data["dec"].max(),
+        redshifts=redshifts,
         seed=12345,
     )
-    test_rand = angular_rng.generate(n_data * 10, draw_from=dict(z=redshifts))
+    test_rand = generator.generate_dataframe(n_data * 10)
+    test_rand.rename(columns=dict(redshifts="z"), inplace=True)
 
     rand_name = "input_rand.parquet"
     rand_path = os.path.join(root, rand_name)

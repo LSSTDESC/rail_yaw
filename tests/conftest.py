@@ -4,7 +4,7 @@ import os
 from typing import TYPE_CHECKING
 
 from pytest import fixture
-from rail.pipelines.estimation.randoms_yaw_v2 import UniformRandoms
+from yaw.randoms import BoxRandoms
 
 from rail.core.stage import RailStage
 from rail.yaw_rail.utils import get_dc2_test_data
@@ -50,11 +50,14 @@ def fixture_zlim(mock_data):
 def fixture_mock_rand(mock_data, seed) -> DataFrame:
     n_data = len(mock_data)
     redshifts = mock_data["z"].to_numpy()
-    angular_rng = UniformRandoms(
+
+    generator = BoxRandoms(
         mock_data["ra"].min(),
         mock_data["ra"].max(),
         mock_data["dec"].min(),
         mock_data["dec"].max(),
+        redshifts=redshifts,
         seed=seed,
     )
-    return angular_rng.generate(2 * n_data, draw_from=dict(z=redshifts))
+    test_rand = generator.generate_dataframe(n_data * 10)
+    return test_rand.rename(columns=dict(redshifts="z"))
