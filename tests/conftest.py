@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from pytest import fixture
-from yaw import UniformRandoms
+from yaw.randoms import BoxRandoms
 
 from rail.core.stage import RailStage
 from rail.yaw_rail.utils import get_dc2_test_data
@@ -11,6 +12,10 @@ from rail.yaw_rail.utils import get_dc2_test_data
 if TYPE_CHECKING:  # pragma: no cover
     from pandas import DataFrame
     from rail.core.data import DataStore
+
+
+# disable mulitprocessing, which is only beneficial on large datasets
+os.environ["YAW_NUM_THREADS"] = "1"
 
 
 @fixture(name="data_store", scope="session", autouse=True)
@@ -45,11 +50,14 @@ def fixture_zlim(mock_data):
 def fixture_mock_rand(mock_data, seed) -> DataFrame:
     n_data = len(mock_data)
     redshifts = mock_data["z"].to_numpy()
-    angular_rng = UniformRandoms(
+
+    generator = BoxRandoms(
         mock_data["ra"].min(),
         mock_data["ra"].max(),
         mock_data["dec"].min(),
         mock_data["dec"].max(),
+        redshifts=redshifts,
         seed=seed,
     )
-    return angular_rng.generate(2 * n_data, draw_from=dict(z=redshifts))
+    test_rand = generator.generate_dataframe(n_data * 10)
+    return test_rand.rename(columns=dict(redshifts="z"))

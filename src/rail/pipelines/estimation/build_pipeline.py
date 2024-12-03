@@ -4,19 +4,21 @@
 # notebook as well as the input test data required to run the pipeline.
 #
 
+# coverage is excluded since the code is run in an external interpreter
 # pylint: skip-file
 import argparse
 import os
 from shutil import rmtree
 
-from yaw import UniformRandoms
+import pandas as pd
+from yaw.randoms import BoxRandoms
 
-from rail.core.stage import RailStage
 import rail.stages
+from rail.core.stage import RailPipeline, RailStage
 
 rail.stages.import_and_attach_all()
 from rail.stages import *
-from rail.yaw_rail.backports import FixedRailPipeline
+
 from rail.yaw_rail.utils import get_dc2_test_data
 
 try:  # TODO: remove when integrated in RAIL
@@ -38,12 +40,12 @@ corr_config = dict(
     rmax=1000,
     zmin=0.2,
     zmax=1.8,
-    zbin_num=8,
+    num_bins=8,
     verbose=VERBOSE,
 )
 
 
-def create_datasets(root):
+def create_datasets(root):  # pragma: no cover
     test_data = get_dc2_test_data()
     redshifts = test_data["z"].to_numpy()
     n_data = len(test_data)
@@ -52,14 +54,16 @@ def create_datasets(root):
     data_path = os.path.join(root, data_name)
     test_data.to_parquet(data_path)
 
-    angular_rng = UniformRandoms(
+    generator = BoxRandoms(
         test_data["ra"].min(),
         test_data["ra"].max(),
         test_data["dec"].min(),
         test_data["dec"].max(),
+        redshifts=redshifts,
         seed=12345,
     )
-    test_rand = angular_rng.generate(n_data * 10, draw_from=dict(z=redshifts))
+    test_rand = generator.generate_dataframe(n_data * 10)
+    test_rand.rename(columns=dict(redshifts="z"), inplace=True)
 
     rand_name = "input_rand.parquet"
     rand_path = os.path.join(root, rand_name)
@@ -68,10 +72,10 @@ def create_datasets(root):
     return (data_path, rand_path)
 
 
-class YawPipeline(FixedRailPipeline):
+class YawPipeline(RailPipeline):  # pragma: no cover
 
-    def __init__(self, data_dir, log_dir):
-        FixedRailPipeline.__init__(self)
+    def __init__(self, data_dir):
+        super().__init__()
 
         DS = RailStage.data_store
         DS.__class__.allow_overwrite = True
@@ -83,7 +87,7 @@ class YawPipeline(FixedRailPipeline):
             ra_name="ra",
             dec_name="dec",
             redshift_name="z",
-            n_patches=5,
+            patch_num=5,
             verbose=VERBOSE,
         )
 
@@ -123,7 +127,7 @@ class YawPipeline(FixedRailPipeline):
         )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     root = parser.parse_args().root
     print(f"setting working directory: {root}")
     if not os.path.exists(root):
@@ -138,7 +142,7 @@ if __name__ == "__main__":
 
     data_path, rand_path = create_datasets(data_dir)
 
-    pipe = YawPipeline(data_dir, log_dir)
+    pipe = YawPipeline(data_dir)
     pipe.initialize(
         overall_inputs=dict(
             data_ref=data_path,
