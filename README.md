@@ -38,7 +38,7 @@ with further documentation and an example `ceci` pipeline
 
 for procesing large and/or more complex data sets.
 
-![rail_yaw_network](https://raw.githubusercontent.com/LSSTDESC/rail_yaw/main/examples/rail_yaw_network.png)
+![rail_yaw_network](https://raw.githubusercontent.com/LSSTDESC/rail/main/examples/estimation_examples/rail_yaw_network.png)
 
 ## RAIL: Redshift Assessment Infrastructure Layers
 
