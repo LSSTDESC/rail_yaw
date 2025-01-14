@@ -17,6 +17,15 @@ This is a wrapper to integrate the clustering redshift code *yet_another_wizz*
 
 **Original publication:** https://arxiv.org/abs/2007.01846
 
+
+## Installation
+
+This package can be either installed with the RAIL base package *(recommended)*
+or explicitly with
+
+    pip install pz-rail-yaw
+
+
 ## About this wrapper
 
 The wrapper closely resembles the structure and functionality of YAW by
