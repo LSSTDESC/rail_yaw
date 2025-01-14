@@ -20,6 +20,7 @@ dynamic = ["version"]
 dependencies = [
     "numpy",
     "h5py",
+    "pandas",
     "pz-rail-base>=1.0.3",
     "yet_another_wizz>=3.1.0",
 ]
