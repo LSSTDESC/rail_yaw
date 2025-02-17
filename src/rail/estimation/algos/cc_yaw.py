@@ -111,11 +111,12 @@ class YawCacheCreate(
     The cache can be constructed from input files or tabular data in memory.
     Column names for sky coordinates are required, redshifts and per-object
     weights are optional. One out of three patch create methods must be
-    specified:
-    1. Splitting the data into predefined patches (from ASCII file or an
+    specified:    
+
+    #. Splitting the data into predefined patches (from ASCII file or an
        existing cache instance, linked as optional stage input).
-    2. Splitting the data based on a column with patch indices.
-    3. Generating approximately equal size patches using k-means clustering of
+    #. Splitting the data based on a column with patch indices.
+    #. Generating approximately equal size patches using k-means clustering of
        objects positions (preferably randoms if provided).
 
     **Note:** The cache directory must be deleted manually when it is no longer
