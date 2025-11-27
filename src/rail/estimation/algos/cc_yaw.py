@@ -123,6 +123,7 @@ class YawCacheCreate(
     tomographic bins.)
     """
 
+    entrypoint_function = "create"  # the user-facing science function for this class
     inputs = [
         ("data", TableHandle),
         # optional
@@ -234,6 +235,7 @@ class YawAutoCorrelate(
     directory that must have redshifts and randoms with redshift attached.
     """
 
+    entrypoint_function = "correlate"  # the user-facing science function for this class
     inputs = [
         ("sample", YawCacheHandle),
     ]
@@ -301,6 +303,7 @@ class YawCrossCorrelate(
     cache must have randoms attached.
     """
 
+    entrypoint_function = "correlate"  # the user-facing science function for this class
     inputs = [
         ("reference", YawCacheHandle),
         ("unknown", YawCacheHandle),
@@ -383,6 +386,7 @@ class YawSummarize(YawRailStage):
     modelling of the output is required.
     """
 
+    entrypoint_function = "summarize"  # the user-facing science function for this class
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
         ("auto_corr_ref", YawCorrFuncHandle),
