@@ -8,7 +8,6 @@ from rail.core.stage import RailStage
 
 from rail.yaw_rail import utils
 
-
 TEST_PARAM_DEFAULT = 0
 
 

@@ -160,9 +160,9 @@ def test_ceci_pipeline(tmp_path) -> None:
     # build and run the example pipeline in a temporary directory
     # NOTE: for debugging, change the DEBUG_LOG_PATH to avoid automatic removal
     # of the logs
-    from rail.pipelines.estimation import (  # pylint: disable=C0415
-        build_pipeline as pipeline_build_scipt,
-    )  # should be a robust method to locate the pipeline generation script
+    from rail.pipelines.estimation import (
+        build_pipeline as pipeline_build_scipt,  # pylint: disable=C0415; should be a robust method to locate the pipeline generation script
+    )
 
     build_script = inspect.getfile(pipeline_build_scipt)
 

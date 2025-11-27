@@ -13,9 +13,9 @@ from functools import lru_cache, wraps
 from typing import TYPE_CHECKING
 
 from pandas import read_parquet
+from rail.core.stage import RailStage
 from yaw.utils import get_logger
 
-from rail.core.stage import RailStage
 from rail.yaw_rail import stage_config
 
 if TYPE_CHECKING:
@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 
     from ceci.config import StageParameter
     from pandas import DataFrame
-
     from rail.core.data import DataHandle
 
 __all__ = [

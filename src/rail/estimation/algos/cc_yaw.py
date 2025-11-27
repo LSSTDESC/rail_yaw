@@ -22,9 +22,9 @@ import warnings
 from itertools import chain
 from typing import TYPE_CHECKING
 
+from rail.core.data import ModelHandle, TableHandle
 from yaw import Configuration, RedshiftData, autocorrelate, crosscorrelate
 
-from rail.core.data import ModelHandle, TableHandle
 from rail.yaw_rail import stage_config
 from rail.yaw_rail.cache import YawCache, patch_centers_from_file
 from rail.yaw_rail.handles import YawCacheHandle, YawCorrFuncHandle
@@ -34,9 +34,8 @@ if TYPE_CHECKING:
     from typing import Any, Literal
 
     from pandas import DataFrame
-    from yaw import Catalog, CorrFunc
-
     from rail.core.data import DataHandle
+    from yaw import Catalog, CorrFunc
 
 __all__ = [
     "YawCacheCreate",
@@ -111,7 +110,7 @@ class YawCacheCreate(
     The cache can be constructed from input files or tabular data in memory.
     Column names for sky coordinates are required, redshifts and per-object
     weights are optional. One out of three patch create methods must be
-    specified:    
+    specified:
 
     #. Splitting the data into predefined patches (from ASCII file or an
        existing cache instance, linked as optional stage input).

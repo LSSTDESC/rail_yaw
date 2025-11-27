@@ -8,9 +8,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import h5py
+from rail.core.data import DataHandle
 from yaw import CorrFunc
 
-from rail.core.data import DataHandle
 from rail.yaw_rail.cache import YawCache
 
 if TYPE_CHECKING:

@@ -4,9 +4,9 @@ import os
 from typing import TYPE_CHECKING
 
 from pytest import fixture
+from rail.core.stage import RailStage
 from yaw.randoms import BoxRandoms
 
-from rail.core.stage import RailStage
 from rail.yaw_rail.utils import get_dc2_test_data
 
 if TYPE_CHECKING:  # pragma: no cover
