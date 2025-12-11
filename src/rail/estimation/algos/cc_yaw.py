@@ -124,6 +124,7 @@ class YawCacheCreate(
     """
 
     entrypoint_function = "create"  # the user-facing science function for this class
+    interactive_function = "yaw_cache_create"
     inputs = [
         ("data", TableHandle),
         # optional
@@ -139,6 +140,7 @@ class YawCacheCreate(
         data: TableHandle | DataFrame,
         rand: TableHandle | DataFrame | None = None,
         patch_source: YawCacheHandle | YawCache | None = None,
+        **kwargs,
     ) -> YawCacheHandle:
         """
         Create the new cache directory and split the input data into spatial
@@ -236,6 +238,7 @@ class YawAutoCorrelate(
     """
 
     entrypoint_function = "correlate"  # the user-facing science function for this class
+    interactive_function = "yaw_auto_correlate"
     inputs = [
         ("sample", YawCacheHandle),
     ]
@@ -243,7 +246,9 @@ class YawAutoCorrelate(
         ("output", YawCorrFuncHandle),
     ]
 
-    def correlate(self, sample: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
+    def correlate(
+        self, sample: YawCacheHandle | YawCache, **kwargs
+    ) -> YawCorrFuncHandle:
         """
         Measure the angular autocorrelation amplitude in bins of redshift.
 
@@ -304,6 +309,7 @@ class YawCrossCorrelate(
     """
 
     entrypoint_function = "correlate"  # the user-facing science function for this class
+    interactive_function = "yaw_cross_correlate"
     inputs = [
         ("reference", YawCacheHandle),
         ("unknown", YawCacheHandle),
@@ -313,7 +319,10 @@ class YawCrossCorrelate(
     ]
 
     def correlate(
-        self, reference: YawCacheHandle | YawCache, unknown: YawCacheHandle | YawCache
+        self,
+        reference: YawCacheHandle | YawCache,
+        unknown: YawCacheHandle | YawCache,
+        **kwargs,
     ) -> YawCorrFuncHandle:
         """
         Measure the angular cross-correlation amplitude in bins of redshift.
@@ -387,6 +396,7 @@ class YawSummarize(YawRailStage):
     """
 
     entrypoint_function = "summarize"  # the user-facing science function for this class
+    interactive_function = "yaw_summarize"
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
         ("auto_corr_ref", YawCorrFuncHandle),
@@ -402,6 +412,7 @@ class YawSummarize(YawRailStage):
         cross_corr: YawCorrFuncHandle | CorrFunc,
         auto_corr_ref: YawCorrFuncHandle | CorrFunc | None = None,
         auto_corr_unk: YawCorrFuncHandle | CorrFunc | None = None,
+        **kwargs,
     ) -> dict[str, DataHandle]:
         """
         Compute a clustring redshift estimate and convert it to a PDF.

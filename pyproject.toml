@@ -56,6 +56,7 @@ addopts   = ["--cov=rail", "--cov-report=html", "--cov-report=term", "--slow"]
 
 [tool.pylint]
 disable = [
+    "unused-argument",            # need extra **kwargs in some places
     "abstract-method",
     "invalid-name",
     "too-many-statements",
