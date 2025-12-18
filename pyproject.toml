@@ -21,7 +21,7 @@ dependencies = [
     "numpy",
     "h5py",
     "pandas",
-    "pz-rail-base>=1.0.3",
+    "pz-rail-base>=2.0.0",
     "yet_another_wizz>=3.1.0",
 ]
 
@@ -52,7 +52,7 @@ write_to = "src/rail/yaw_rail/_version.py"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts   = ["--cov=rail", "--cov-report=html", "--cov-report=term", "--slow"]
+addopts = ["--cov=rail", "--cov-report=html", "--cov-report=term", "--slow"]
 
 [tool.pylint]
 disable = [
