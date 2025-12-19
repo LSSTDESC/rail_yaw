@@ -18,13 +18,6 @@ if TYPE_CHECKING:  # pragma: no cover
 os.environ["YAW_NUM_THREADS"] = "1"
 
 
-@fixture(name="data_store", scope="session", autouse=True)
-def fixture_data_store() -> DataStore:
-    data_store = RailStage.data_store
-    data_store.__class__.allow_overwrite = True
-    return data_store
-
-
 @fixture(name="seed", scope="session")
 def fixture_seed() -> int:
     return 12345
