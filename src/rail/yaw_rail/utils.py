@@ -156,7 +156,7 @@ class YawRailStage(ABC, RailStage):
         kwargs.update(allow_missing=True)  # this is required
         handle = self.get_handle(tag, **kwargs)
         # the handle is only set if there is either a path or data
-        if handle_has_path(handle) or handle.data is not None:
+        if (handle.data is not None) or handle_has_path(handle):
             return handle
         return None
 
