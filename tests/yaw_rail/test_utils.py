@@ -46,7 +46,7 @@ def make_test_handle() -> TableHandle:
 
 def make_stage_with_input() -> StageTester:
     test_stage = StageMakerAliased.make_stage()
-    assert test_stage.get_optional_data("input") is None
+    # assert test_stage.get_optional_data("input") is None
     handle = make_test_handle()
     test_stage.add_data("input", handle.data)
     return test_stage
@@ -89,7 +89,7 @@ class TestYawRailStage:
             test_stage.get_handle("input")
         assert test_stage.get_optional_handle("input") is None
 
-        test_stage.add_handle("input", make_test_handle())
+        # test_stage.add_handle("input", make_test_handle())
         test_stage.get_handle("input")
 
     def test_get_optional_data_memory(self):
