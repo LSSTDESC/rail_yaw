@@ -76,9 +76,6 @@ class YawPipeline(RailPipeline):  # pragma: no cover
     def __init__(self, data_dir):
         super().__init__()
 
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
-
         self.cache_ref = YawCacheCreate.build(
             aliases=create_yaw_cache_alias("ref"),
             path=os.path.join(data_dir, "test_ref"),
