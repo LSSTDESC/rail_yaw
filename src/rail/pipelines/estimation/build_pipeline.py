@@ -11,10 +11,9 @@ import os
 from shutil import rmtree
 
 import pandas as pd
-from yaw.randoms import BoxRandoms
-
 import rail.stages
 from rail.core.stage import RailPipeline, RailStage
+from yaw.randoms import BoxRandoms
 
 rail.stages.import_and_attach_all()
 from rail.stages import *
@@ -76,9 +75,6 @@ class YawPipeline(RailPipeline):  # pragma: no cover
 
     def __init__(self, data_dir):
         super().__init__()
-
-        DS = RailStage.data_store
-        DS.__class__.allow_overwrite = True
 
         self.cache_ref = YawCacheCreate.build(
             aliases=create_yaw_cache_alias("ref"),

@@ -13,9 +13,9 @@ from functools import lru_cache, wraps
 from typing import TYPE_CHECKING
 
 from pandas import read_parquet
+from rail.core.stage import RailStage
 from yaw.utils import get_logger
 
-from rail.core.stage import RailStage
 from rail.yaw_rail import stage_config
 
 if TYPE_CHECKING:
@@ -24,7 +24,6 @@ if TYPE_CHECKING:
 
     from ceci.config import StageParameter
     from pandas import DataFrame
-
     from rail.core.data import DataHandle
 
 __all__ = [
@@ -157,7 +156,7 @@ class YawRailStage(ABC, RailStage):
         kwargs.update(allow_missing=True)  # this is required
         handle = self.get_handle(tag, **kwargs)
         # the handle is only set if there is either a path or data
-        if handle_has_path(handle) or handle.data is not None:
+        if (handle.data is not None) or handle_has_path(handle):
             return handle
         return None
 

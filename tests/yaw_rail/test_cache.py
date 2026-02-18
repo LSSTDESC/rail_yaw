@@ -3,10 +3,10 @@ from __future__ import annotations
 import os
 
 import numpy as np
-from pandas import DataFrame
 from numpy.testing import assert_array_equal
 from numpy.typing import NDArray
-from pytest import fixture, raises, mark
+from pandas import DataFrame
+from pytest import fixture, mark, raises
 from yaw.catalog import Catalog
 from yaw.coordinates import AngularCoordinates
 

@@ -4,9 +4,9 @@ import os
 from typing import TYPE_CHECKING
 
 from pytest import fixture
+from rail.core.stage import RailStage
 from yaw.randoms import BoxRandoms
 
-from rail.core.stage import RailStage
 from rail.yaw_rail.utils import get_dc2_test_data
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -16,13 +16,6 @@ if TYPE_CHECKING:  # pragma: no cover
 
 # disable mulitprocessing, which is only beneficial on large datasets
 os.environ["YAW_NUM_THREADS"] = "1"
-
-
-@fixture(name="data_store", scope="session", autouse=True)
-def fixture_data_store() -> DataStore:
-    data_store = RailStage.data_store
-    data_store.__class__.allow_overwrite = True
-    return data_store
 
 
 @fixture(name="seed", scope="session")

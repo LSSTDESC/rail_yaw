@@ -4,12 +4,12 @@
 # Automatically run by run_pipeline.sh
 #
 
-# pylint: skip-file
-import pickle
 import os
 
+# pylint: skip-file
+import pickle
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     with open(os.path.join("data", "output_summarize.pkl"), "rb") as f:
         ncc = pickle.load(f)

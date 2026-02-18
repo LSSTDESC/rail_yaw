@@ -22,9 +22,9 @@ import warnings
 from itertools import chain
 from typing import TYPE_CHECKING
 
+from rail.core.data import ModelHandle, TableHandle
 from yaw import Configuration, RedshiftData, autocorrelate, crosscorrelate
 
-from rail.core.data import ModelHandle, TableHandle
 from rail.yaw_rail import stage_config
 from rail.yaw_rail.cache import YawCache, patch_centers_from_file
 from rail.yaw_rail.handles import YawCacheHandle, YawCorrFuncHandle
@@ -34,9 +34,8 @@ if TYPE_CHECKING:
     from typing import Any, Literal
 
     from pandas import DataFrame
-    from yaw import Catalog, CorrFunc
-
     from rail.core.data import DataHandle
+    from yaw import Catalog, CorrFunc
 
 __all__ = [
     "YawCacheCreate",
@@ -111,7 +110,7 @@ class YawCacheCreate(
     The cache can be constructed from input files or tabular data in memory.
     Column names for sky coordinates are required, redshifts and per-object
     weights are optional. One out of three patch create methods must be
-    specified:    
+    specified:
 
     #. Splitting the data into predefined patches (from ASCII file or an
        existing cache instance, linked as optional stage input).
@@ -124,6 +123,8 @@ class YawCacheCreate(
     tomographic bins.)
     """
 
+    entrypoint_function = "create"  # the user-facing science function for this class
+    interactive_function = "yaw_cache_create"
     inputs = [
         ("data", TableHandle),
         # optional
@@ -139,6 +140,7 @@ class YawCacheCreate(
         data: TableHandle | DataFrame,
         rand: TableHandle | DataFrame | None = None,
         patch_source: YawCacheHandle | YawCache | None = None,
+        **kwargs,
     ) -> YawCacheHandle:
         """
         Create the new cache directory and split the input data into spatial
@@ -152,10 +154,12 @@ class YawCacheCreate(
             The randoms to split into patches and cache, positions used to
             automatically generate patch centers if provided and stage is
             configured with `patch_num`.
+            For interactive mode RAIL, set to the string "none" if not desired.
         patch_source : YawCache, optional
             An existing cache instance that provides the patch centers. Use to
             ensure consistent patch centers when running cross-correlations.
             Takes precedence over the any configuration parameters.
+            For interactive mode RAIL, set to the string "none" if not desired.
 
         Returns
         -------
@@ -235,6 +239,8 @@ class YawAutoCorrelate(
     directory that must have redshifts and randoms with redshift attached.
     """
 
+    entrypoint_function = "correlate"  # the user-facing science function for this class
+    interactive_function = "yaw_auto_correlate"
     inputs = [
         ("sample", YawCacheHandle),
     ]
@@ -242,7 +248,9 @@ class YawAutoCorrelate(
         ("output", YawCorrFuncHandle),
     ]
 
-    def correlate(self, sample: YawCacheHandle | YawCache) -> YawCorrFuncHandle:
+    def correlate(
+        self, sample: YawCacheHandle | YawCache, **kwargs
+    ) -> YawCorrFuncHandle:
         """
         Measure the angular autocorrelation amplitude in bins of redshift.
 
@@ -302,6 +310,8 @@ class YawCrossCorrelate(
     cache must have randoms attached.
     """
 
+    entrypoint_function = "correlate"  # the user-facing science function for this class
+    interactive_function = "yaw_cross_correlate"
     inputs = [
         ("reference", YawCacheHandle),
         ("unknown", YawCacheHandle),
@@ -311,7 +321,10 @@ class YawCrossCorrelate(
     ]
 
     def correlate(
-        self, reference: YawCacheHandle | YawCache, unknown: YawCacheHandle | YawCache
+        self,
+        reference: YawCacheHandle | YawCache,
+        unknown: YawCacheHandle | YawCache,
+        **kwargs,
     ) -> YawCorrFuncHandle:
         """
         Measure the angular cross-correlation amplitude in bins of redshift.
@@ -384,6 +397,8 @@ class YawSummarize(YawRailStage):
     modelling of the output is required.
     """
 
+    entrypoint_function = "summarize"  # the user-facing science function for this class
+    interactive_function = "yaw_summarize"
     inputs = [
         ("cross_corr", YawCorrFuncHandle),
         ("auto_corr_ref", YawCorrFuncHandle),
@@ -399,6 +414,7 @@ class YawSummarize(YawRailStage):
         cross_corr: YawCorrFuncHandle | CorrFunc,
         auto_corr_ref: YawCorrFuncHandle | CorrFunc | None = None,
         auto_corr_unk: YawCorrFuncHandle | CorrFunc | None = None,
+        **kwargs,
     ) -> dict[str, DataHandle]:
         """
         Compute a clustring redshift estimate and convert it to a PDF.
@@ -415,6 +431,7 @@ class YawSummarize(YawRailStage):
             Pair counts from the unknown sample autocorrelation measurement,
             used to correct for the reference sample galaxy bias. Typically only
             availble when using simulated data sets.
+            For interactive mode RAIL, set to the string "none" if not desired.
 
         Returns
         -------

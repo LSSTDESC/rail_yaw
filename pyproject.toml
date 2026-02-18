@@ -1,11 +1,11 @@
 [project]
 name = "pz-rail-yaw"
 requires-python = ">=3.10"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 description = "Wrapper around the yet_another_wizz clustering redshift code for RAIL"
-readme = {file = "README.md", content-type = "text/markdown"}
+readme = { file = "README.md", content-type = "text/markdown" }
 authors = [
-    { name = "LSST Dark Energy Science Collaboration (DESC)", email = "lsst-desc-rail-admin@slac.stanford.edu" }
+    { name = "LSST Dark Energy Science Collaboration (DESC)", email = "lsst-desc-rail-admin@slac.stanford.edu" },
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -21,7 +21,7 @@ dependencies = [
     "numpy",
     "h5py",
     "pandas",
-    "pz-rail-base>=1.0.3",
+    "pz-rail-base>=2.0.0-dev",
     "yet_another_wizz>=3.1.0",
 ]
 
@@ -32,17 +32,17 @@ Repository = "https://github.com/LSSTDESC/rail_yaw.git"
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "pytest-cov", # Used to report total code coverage
+    "pytest-cov",       # Used to report total code coverage
     "pytest-skip-slow", # skip the slow pipeline tests
-    "pre-commit", # Used to run checks before finalizing a git commit
-    "pylint", # Used for static linting of files
-    "black", # code style
-    "nbconvert", # for pre-commit tasks
+    "pre-commit",       # Used to run checks before finalizing a git commit
+    "pylint",           # Used for static linting of files
+    "black",            # code style
+    "nbconvert",        # for pre-commit tasks
 ]
 
 [build-system]
 requires = [
-    "setuptools>=62", # Used to build and package the Python project
+    "setuptools>=62",      # Used to build and package the Python project
     "setuptools_scm>=6.2", # Gets release version from git. Makes it available programmatically
 ]
 build-backend = "setuptools.build_meta"
@@ -51,18 +51,12 @@ build-backend = "setuptools.build_meta"
 write_to = "src/rail/yaw_rail/_version.py"
 
 [tool.pytest.ini_options]
-testpaths = [
-    "tests",
-]
-addopts = [
-    "--cov=rail",
-    "--cov-report=html",
-    "--cov-report=term",
-    "--slow",
-]
+testpaths = ["tests"]
+addopts = ["--cov=rail", "--cov-report=html", "--cov-report=term", "--slow"]
 
 [tool.pylint]
 disable = [
+    "unused-argument",            # need extra **kwargs in some places
     "abstract-method",
     "invalid-name",
     "too-many-statements",
