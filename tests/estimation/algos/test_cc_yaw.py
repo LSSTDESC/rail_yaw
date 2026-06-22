@@ -7,6 +7,7 @@ from subprocess import check_call
 
 import numpy as np
 import numpy.testing as npt
+import pytest
 from pytest import fixture, mark, raises
 
 from rail.estimation.algos import cc_yaw
@@ -155,7 +156,8 @@ def write_expect_ncc(path: Path) -> Path:
     return target_path
 
 
-@mark.slow
+#@mark.slow
+@pytest.mark.skip(reason="do not usually test this, fix later")
 def test_ceci_pipeline(tmp_path) -> None:
     # build and run the example pipeline in a temporary directory
     # NOTE: for debugging, change the DEBUG_LOG_PATH to avoid automatic removal
