@@ -9,9 +9,11 @@ from typing import TYPE_CHECKING
 
 import h5py
 from rail.core.data import DataHandle
-from yaw import CorrFunc
 
 from rail.yaw_rail.cache import YawCache
+from rail.yaw_rail.combine import YawClusteringNz
+from rail.yaw_rail.correlation import ScaledCorrFuncs
+from rail.yaw_rail.fitting import YawAmplitudeFit
 
 if TYPE_CHECKING:
     from typing import TextIO
@@ -19,6 +21,8 @@ if TYPE_CHECKING:
 __all__ = [
     "YawCacheHandle",
     "YawCorrFuncHandle",
+    "YawFitHandle",
+    "YawNzHandle",
 ]
 
 
@@ -60,8 +64,12 @@ class YawCacheHandle(DataHandle):
 
 class YawCorrFuncHandle(DataHandle):
     """
-    Class to act as a handle for a `yaw.CorrFunc` instance, associating it
+    Class to act as a handle for a `ScaledCorrFuncs` instance, associating it
     with a file and providing tools to read and write the data.
+
+    The correlation functions measured in each radial bin are stored in a single
+    HDF5 file, one group per radial bin, together with the scale limits they were
+    measured in.
 
     Parameters
     ----------
@@ -75,7 +83,7 @@ class YawCorrFuncHandle(DataHandle):
         The name of the stage that created this data handle.
     """
 
-    data: CorrFunc
+    data: ScaledCorrFuncs
     suffix = "hdf5"
 
     @classmethod
@@ -83,9 +91,87 @@ class YawCorrFuncHandle(DataHandle):
         return h5py.File(path, **kwargs)
 
     @classmethod
-    def _read(cls, path: str, **kwargs) -> CorrFunc:
-        return CorrFunc.from_file(path)
+    def _read(cls, path: str, **kwargs) -> ScaledCorrFuncs:
+        with h5py.File(path, mode="r") as f:
+            return ScaledCorrFuncs.from_hdf(f)
 
     @classmethod
-    def _write(cls, data: CorrFunc, path: str, **kwargs) -> None:
-        data.to_file(path)
+    def _write(cls, data: ScaledCorrFuncs, path: str, **kwargs) -> None:
+        with h5py.File(path, mode="w") as f:
+            data.to_hdf(f)
+
+
+class YawFitHandle(DataHandle):
+    """
+    Class to act as a handle for a `YawAmplitudeFit` instance, associating it
+    with a file and providing tools to read and write the data.
+
+    Holds the fitted correlation amplitudes of a single tomographic bin and
+    reference tracer.
+
+    Parameters
+    ----------
+    tag : str
+        The tag under which this data handle can be found in the store.
+    data : any or None
+        The associated data.
+    path : str or None
+        The path to the associated file.
+    creator : str or None
+        The name of the stage that created this data handle.
+    """
+
+    data: YawAmplitudeFit
+    suffix = "hdf5"
+
+    @classmethod
+    def _open(cls, path: str, **kwargs) -> h5py.File:
+        return h5py.File(path, **kwargs)
+
+    @classmethod
+    def _read(cls, path: str, **kwargs) -> YawAmplitudeFit:
+        with h5py.File(path, mode="r") as f:
+            return YawAmplitudeFit.from_hdf(f)
+
+    @classmethod
+    def _write(cls, data: YawAmplitudeFit, path: str, **kwargs) -> None:
+        with h5py.File(path, mode="w") as f:
+            data.to_hdf(f)
+
+
+class YawNzHandle(DataHandle):
+    """
+    Class to act as a handle for a `YawClusteringNz` instance, associating it
+    with a file and providing tools to read and write the data.
+
+    Holds the clustering redshift estimate combined from one or more reference
+    tracers, and the estimate of each tracer before the combination.
+
+    Parameters
+    ----------
+    tag : str
+        The tag under which this data handle can be found in the store.
+    data : any or None
+        The associated data.
+    path : str or None
+        The path to the associated file.
+    creator : str or None
+        The name of the stage that created this data handle.
+    """
+
+    data: YawClusteringNz
+    suffix = "hdf5"
+
+    @classmethod
+    def _open(cls, path: str, **kwargs) -> h5py.File:
+        return h5py.File(path, **kwargs)
+
+    @classmethod
+    def _read(cls, path: str, **kwargs) -> YawClusteringNz:
+        with h5py.File(path, mode="r") as f:
+            return YawClusteringNz.from_hdf(f)
+
+    @classmethod
+    def _write(cls, data: YawClusteringNz, path: str, **kwargs) -> None:
+        with h5py.File(path, mode="w") as f:
+            data.to_hdf(f)

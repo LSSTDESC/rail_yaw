@@ -1,4 +1,5 @@
 cache_ref:
+  logging_level: 30
   output_mode: default
   path: ./data/test_ref
   overwrite: true
@@ -16,6 +17,7 @@ cache_ref:
   name: cache_ref
   config: null
 cache_unk:
+  logging_level: 30
   output_mode: default
   path: ./data/test_unk
   overwrite: true
@@ -33,9 +35,11 @@ cache_unk:
   name: cache_unk
   config: null
 auto_corr:
+  logging_level: 30
   output_mode: default
-  rmin: 100.0
-  rmax: 1000.0
+  rmin: 100
+  rmax: 1000
+  unit: kpc
   rweight: null
   resolution: null
   zmin: 0.2
@@ -44,14 +48,17 @@ auto_corr:
   method: linear
   edges: null
   closed: right
+  cosmology: Planck15
   max_workers: null
   verbose: debug
   name: auto_corr
   config: null
 cross_corr:
+  logging_level: 30
   output_mode: default
-  rmin: 100.0
-  rmax: 1000.0
+  rmin: 100
+  rmax: 1000
+  unit: kpc
   rweight: null
   resolution: null
   zmin: 0.2
@@ -60,12 +67,15 @@ cross_corr:
   method: linear
   edges: null
   closed: right
+  cosmology: Planck15
   max_workers: null
   verbose: debug
   name: cross_corr
   config: null
 summarize:
+  logging_level: 30
   output_mode: default
+  scale_idx: 0
   verbose: debug
   name: summarize
   config: null

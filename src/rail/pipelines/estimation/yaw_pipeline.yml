@@ -27,8 +27,8 @@ stages:
   aliases:
     data: data_unk
     rand: rand_unk
-    patch_source: output_cache_ref
     output: output_cache_unk
+    patch_source: output_cache_ref
 - name: auto_corr
   classname: YawAutoCorrelate
   nprocess: 1

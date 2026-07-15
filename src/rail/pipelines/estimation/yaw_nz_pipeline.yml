@@ -1,0 +1,87 @@
+output_dir: ./data
+log_dir: ./logs
+resume: false
+config: ./yaw_nz_pipeline_config.yml
+modules: rail
+inputs:
+  data_ref: ./data/input_data.parquet
+  rand_ref: ./data/input_rand.parquet
+  data_unk: ./data/input_data.parquet
+  rand_unk: none
+  patch_source_ref: none
+stages:
+- name: cache_ref
+  classname: YawCacheCreate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    data: data_ref
+    rand: rand_ref
+    patch_source: patch_source_ref
+    output: output_cache_ref
+- name: cache_unk
+  classname: YawCacheCreate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    data: data_unk
+    rand: rand_unk
+    output: output_cache_unk
+    patch_source: output_cache_ref
+- name: auto_corr_lowz
+  classname: YawAutoCorrelate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_auto_corr_lowz
+    sample: output_cache_ref
+- name: cross_corr_lowz
+  classname: YawCrossCorrelate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_cross_corr_lowz
+    reference: output_cache_ref
+    unknown: output_cache_unk
+- name: fit_lowz
+  classname: YawFitAmplitude
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_fit_lowz
+    cross_corr: output_cross_corr_lowz
+    auto_corr_ref: output_auto_corr_lowz
+- name: auto_corr_highz
+  classname: YawAutoCorrelate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_auto_corr_highz
+    sample: output_cache_ref
+- name: cross_corr_highz
+  classname: YawCrossCorrelate
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_cross_corr_highz
+    reference: output_cache_ref
+    unknown: output_cache_unk
+- name: fit_highz
+  classname: YawFitAmplitude
+  nprocess: 1
+  module_name: rail.estimation.algos.cc_yaw
+  aliases:
+    output: output_fit_highz
+    cross_corr: output_cross_corr_highz
+    auto_corr_ref: output_auto_corr_highz
+- name: combine
+  classname: YawNzCombine_lowz_highz
+  nprocess: 1
+  module_name: rail.pipelines.estimation.build_pipeline_nz
+  aliases:
+    output: output_combine
+    fit_lowz: output_fit_lowz
+    fit_highz: output_fit_highz
+site:
+  max_threads: 2
+  name: local
