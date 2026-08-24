@@ -6,9 +6,12 @@ derive them, including their default values and documentation, from
 
 from __future__ import annotations
 
+import numpy as np
 from ceci.config import StageParameter
 from yaw import config
 from yaw.options import NotSet
+
+from rail.yaw_rail.cosmology import DEFAULT_TRANSFER_FUNCTION
 
 __all__ = [
     "cache",
@@ -16,6 +19,16 @@ __all__ = [
     "yaw_patches",
     "yaw_max_workers",
     "yaw_scales",
+    "yaw_zbins",
+    "yaw_verbose",
+    "yaw_scale_idx",
+    "yaw_cosmology",
+    "yaw_ccl",
+    "yaw_fit",
+    "yaw_combine",
+    "DEFAULT_SCALE_EDGES",
+    "DEFAULT_RMIN",
+    "DEFAULT_RMAX",
 ]
 
 
@@ -130,8 +143,185 @@ yaw_patches = dict(
 
 #### YawAuto/CrossCorrelate ####
 
+DEFAULT_SCALE_EDGES = np.logspace(np.log10(30.0), np.log10(30_000.0), 25)
+"""Edges of the default radial binning in kpc, yielding 24 logarithmic scale bins."""
+
+DEFAULT_RMIN: list[float] = DEFAULT_SCALE_EDGES[:-1].tolist()
+"""Default lower limits of the 24 radial bins in kpc."""
+
+DEFAULT_RMAX: list[float] = DEFAULT_SCALE_EDGES[1:].tolist()
+"""Default upper limits of the 24 radial bins in kpc."""
+
+
 yaw_scales = create_rail_config(config.ScalesConfig)
 """Stage parameters to configure the correlation measurements."""
 
+# `ScalesConfig.get_paramspec()` reports `rmin`/`rmax` as `float`, but
+# *yet_another_wizz* accepts a sequence of scale limits to measure the
+# correlation amplitudes in multiple radial bins simultaneously. Using
+# `dtype=None` disables the type check in `ceci` and permits both a scalar and a
+# sequence of scale limits.
+yaw_scales["rmin"] = StageParameter(
+    dtype=None,
+    default=DEFAULT_RMIN,
+    required=False,
+    msg="single or sequence of lower scale limits in given 'unit'",
+)
+yaw_scales["rmax"] = StageParameter(
+    dtype=None,
+    default=DEFAULT_RMAX,
+    required=False,
+    msg="single or sequence of upper scale limits in given 'unit'",
+)
+
 yaw_zbins = create_rail_config(config.BinningConfig)
 """Stage parameters to configure the redshift sampling of the redshift estimate."""
+
+yaw_scale_idx = StageParameter(
+    int,
+    default=0,
+    required=False,
+    msg="index of the radial bin of the correlation measurement to use",
+)
+"""Stage parameter to select a single radial bin of a correlation measurement."""
+
+yaw_cosmology = dict(
+    cosmology=StageParameter(
+        str,
+        default="Planck15",
+        required=False,
+        msg="name of the fiducial cosmology, used by *yet_another_wizz* to "
+        "convert physical scales to angles and by CCL to model the matter "
+        "correlation function",
+    ),
+)
+"""Stage parameter to select the fiducial cosmology."""
+
+yaw_ccl = dict(
+    transfer_function=StageParameter(
+        str,
+        default=DEFAULT_TRANSFER_FUNCTION,
+        required=False,
+        msg="transfer function used by CCL to model the matter correlation "
+        "function; the default requires no external Boltzmann solver, use "
+        "'boltzmann_camb' (CCL's own default) if 'camb' is installed",
+    ),
+)
+"""Stage parameter to configure the CCL matter model."""
+
+
+#### YawFitAmplitude ####
+
+yaw_fit = dict(
+    fit_rmin=StageParameter(
+        float,
+        default=1000.0,
+        required=False,
+        msg="lower scale limit of the cross-correlation amplitude fit, in the "
+        "'unit' of the correlation measurement",
+    ),
+    fit_rmax=StageParameter(
+        float,
+        default=30_000.0,
+        required=False,
+        msg="upper scale limit of the cross-correlation amplitude fit",
+    ),
+    auto_fit_rmin=StageParameter(
+        float,
+        default=2000.0,
+        required=False,
+        msg="lower scale limit of the autocorrelation amplitude fit",
+    ),
+    auto_fit_rmax=StageParameter(
+        float,
+        default=30_000.0,
+        required=False,
+        msg="upper scale limit of the autocorrelation amplitude fit",
+    ),
+    alpha=StageParameter(
+        float,
+        default=0.0,
+        required=False,
+        msg="power-law exponent of the radial weight r**alpha * dr applied when "
+        "fitting the amplitude with diagonal weighted least squares "
+        "(no effect if 'use_jk_cov' is set, where the weights cancel)",
+    ),
+    fit_constant=StageParameter(
+        bool,
+        default=True,
+        required=False,
+        msg="whether to fit an additive constant alongside the amplitude of the "
+        "cross-correlation, i.e. w ~ A * w_mm + C instead of w ~ A * w_mm",
+    ),
+    use_jk_cov=StageParameter(
+        bool,
+        default=True,
+        required=False,
+        msg="whether to fit with generalised least squares using the jackknife "
+        "covariance across scales instead of diagonal weighted least squares",
+    ),
+    shrinkage=StageParameter(
+        str,
+        default="auto",
+        required=False,
+        msg="shrinkage intensity applied to the jackknife covariance to "
+        "stabilise its inverse; either 'auto' for the Ledoit-Wolf optimal "
+        "intensity or a float in [0, 1] given as string",
+    ),
+    hartlap=StageParameter(
+        bool,
+        default=True,
+        required=False,
+        msg="whether to apply the Hartlap correction for the bias of the inverse "
+        "of an estimated covariance matrix",
+    ),
+    diag_eps=StageParameter(
+        float,
+        default=0.0,
+        required=False,
+        msg="small value added to the diagonal of the covariance before inversion",
+    ),
+)
+"""Stage parameters to configure the correlation amplitude fit."""
+
+
+#### YawNzCombine ####
+
+yaw_combine = dict(
+    bias_mode=StageParameter(
+        str,
+        default="growth_factor",
+        required=False,
+        msg="model for the galaxy bias evolution b_p(z) of the unknown sample; "
+        "'growth_factor' uses b_p = 1 / D(z), 'constant' uses b_p = 1",
+    ),
+    paired=StageParameter(
+        bool,
+        default=False,
+        required=False,
+        msg="whether to treat the jackknife samples of the cross- and "
+        "autocorrelation amplitudes as paired when propagating uncertainties "
+        "into the clustering redshift estimate",
+    ),
+    normalize=StageParameter(
+        bool,
+        default=True,
+        required=False,
+        msg="whether to normalise the combined estimate to unit integral using a "
+        "non-negative B-spline fit",
+    ),
+    z_norm_max=StageParameter(
+        float,
+        required=False,
+        msg="upper redshift limit of the normalisation integral, defaults to the "
+        "highest redshift of the combined estimate",
+    ),
+    round_z_decimals=StageParameter(
+        int,
+        default=6,
+        required=False,
+        msg="number of decimals to which redshifts are rounded when matching bins "
+        "of different tracers for the inverse-variance combination",
+    ),
+)
+"""Stage parameters to configure the combination of multiple tracers."""

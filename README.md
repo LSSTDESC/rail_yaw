@@ -47,6 +47,40 @@ with further documentation and an example `ceci` pipeline
 
 for procesing large and/or more complex data sets.
 
+### Fitting the correlation amplitude
+
+YAW can measure the correlation amplitude in more than one radial bin. Both
+correlate stages accept a sequence of scale limits for `rmin`/`rmax` and default
+to 24 logarithmic bins between 30 kpc and 30 Mpc. Two further stages turn these
+measurements into a redshift estimate:
+
+- *YawFitAmplitude* fits the amplitudes measured in the radial bins against a
+  model for the angular matter correlation function `w_mm`, computed with CCL,
+  in every redshift bin: `w(r) ~ A * w_mm(r)`, optionally with an additive
+  constant. Repeating the fit for every jackknife sample yields the uncertainty.
+  Its output is the clustering redshift measurement of one tomographic bin and
+  one reference tracer.
+- *YawNzCombine* forms `n_cc = A_sp / sqrt(A_ss) / b_p` and combines the
+  estimates of several reference tracers by inverse-variance weighting. The
+  tracers may cover different, partially overlapping redshift ranges, but their
+  binning must coincide where the ranges overlap. The bias evolution `b_p` of
+  the unknown sample defaults to `1 / D(z)`.
+
+Since a RAIL stage declares its inputs statically, the summarizer is created for
+a given set of tracers with `create_yaw_nz_combine`, which adds one input per
+tracer. Call it at the top level of the module that defines your pipeline, so
+that `ceci` can recreate the stage in its subprocesses:
+
+    YawNzCombineTracers = create_yaw_nz_combine(["bgs", "lrg"])
+
+An example `ceci` pipeline covering this path is
+
+    src/rail/pipelines/estimation/yaw_nz_pipeline.yml
+
+**Note:** the matter model defaults to the `eisenstein_hu` transfer function, so
+that it works without an external Boltzmann solver. Set
+`transfer_function="boltzmann_camb"` (CCL's own default) if `camb` is installed.
+
 ![rail_yaw_network](https://raw.githubusercontent.com/LSSTDESC/rail/main/examples/estimation_examples/rail_yaw_network.png)
 
 ## RAIL: Redshift Assessment Infrastructure Layers

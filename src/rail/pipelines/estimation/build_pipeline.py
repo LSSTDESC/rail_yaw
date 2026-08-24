@@ -20,11 +20,9 @@ from rail.stages import *
 
 from rail.yaw_rail.utils import get_dc2_test_data
 
-try:  # TODO: remove when integrated in RAIL
-    YawCacheCreate
-except NameError:
-    from rail.estimation.algos.cc_yaw import *
-
+# `import_and_attach_all` only attaches the stage classes, not the helpers that
+# build their alias mappings, so the stage module is imported explicitly
+from rail.estimation.algos.cc_yaw import *
 
 VERBOSE = "debug"  # verbosity level of built-in logger, disable with "error"
 
@@ -87,11 +85,18 @@ class YawPipeline(RailPipeline):  # pragma: no cover
             verbose=VERBOSE,
         )
 
+        # `patch_source` is wired to the reference cache below. It must not be
+        # aliased here, since `RailStage.set_data` gives an existing alias
+        # precedence over the tag of the connected stage's output, which would
+        # leave the input pointing at a file that no stage produces.
+        unk_aliases = create_yaw_cache_alias("unk")
+        del unk_aliases["patch_source"]
+
         self.cache_unk = YawCacheCreate.build(
             connections=dict(
                 patch_source=self.cache_ref.io.output,
             ),
-            aliases=create_yaw_cache_alias("unk"),
+            aliases=unk_aliases,
             path=os.path.join(data_dir, "test_unk"),
             overwrite=True,
             ra_name="ra",
